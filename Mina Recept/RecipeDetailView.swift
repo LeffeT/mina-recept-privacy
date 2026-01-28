@@ -96,7 +96,8 @@ struct RecipeDetailView: View {
                                     ingredient: ingredient,
                                     servings: servings,
                                     baseServings: Int(recipe.baseServings),
-                                    themeManager: themeManager
+                                    themeManager: themeManager,
+                                    languageManager: languageManager
                                 )
                             }
                         }

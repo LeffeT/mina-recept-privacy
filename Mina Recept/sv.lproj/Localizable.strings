@@ -38,6 +38,26 @@
 
 "share_open_in_app" = "👉 Öppna i Mina Recept";
 "share_recipe_title" = "🍽️ %@";
+"add_ingredient" = "Lägg Till Ingredient";
+"ingredient" = "Ingrediens";
+"amount"     = "Mängd";
+"portions"   = "Portioner";
+
+
+"unit" = "Enhet";
+
+"unit.pcs"   = "st";
+"unit.g"     = "g";
+"unit.kg"    = "kg";
+"unit.ml"    = "ml";
+"unit.dl"    = "dl";
+"unit.l"     = "l";
+"unit.tsp"   = "tsk";
+"unit.tbsp"  = "msk";
+"unit.krm"   = "krm";
+"unit.pinch" = "nypa";
+
+
 
 "import_recipe_title" = "Importera recept";
 "import_recipe_question" = "Vill du importera detta recept till **Mina Recept**?";

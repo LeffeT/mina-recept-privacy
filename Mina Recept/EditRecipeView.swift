@@ -481,9 +481,10 @@ struct EditRecipeView: View {
                 } label: {
                     HStack {
                         Text(
-                            ingredientUnit.isEmpty
-                            ? L("unit", languageManager)
-                            : L("unit.\(ingredientUnit)", languageManager)
+                           // L("unit.pinch", languageManager)
+                           ingredientUnit.isEmpty
+                           ? L("unit", languageManager)
+                           : L("unit.\(ingredientUnit)", languageManager)
                         )
                         .foregroundColor(
                             ingredientUnit.isEmpty

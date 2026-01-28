@@ -27,6 +27,7 @@ struct EditRecipeIngredientsSection: View {
 
     @Environment(\.managedObjectContext) private var context
     @EnvironmentObject var themeManager: ThemeManager
+    @EnvironmentObject var languageManager: LanguageManager
 
     @State private var servings: Int
     @State private var showIngredientEditor = false
@@ -66,7 +67,8 @@ struct EditRecipeIngredientsSection: View {
                         ingredient: ingredient,
                         servings: servings,
                         baseServings: Int(recipe.baseServings),
-                        themeManager: themeManager
+                        themeManager: themeManager,
+                        languageManager: languageManager
                     )
                     .swipeActions {
                         Button(role: .destructive) {

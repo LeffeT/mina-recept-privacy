@@ -14,18 +14,23 @@ func pluralize(_ name: String, amount: Double) -> String {
 
 
 struct IngredientRowView: View {
+    
+
     let ingredient: IngredientEntity
     let servings: Int
     let baseServings: Int
     let themeManager: ThemeManager
+    let languageManager: LanguageManager 
 
     var body: some View {
         Text(
             IngredientFormatter.formattedLine(
                 ingredient: ingredient,
                 servings: servings,
-                baseServings: baseServings
-            )
+                baseServings: baseServings,
+                languageManager: languageManager
+         )
+
         )
         .foregroundStyle(.white)
     }

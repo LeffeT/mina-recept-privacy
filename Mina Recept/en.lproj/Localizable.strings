@@ -38,6 +38,26 @@
 
 "share_open_in_app" = "👉 Open in My Recipes";
 "share_recipe_title" = "🍽️ %@";
+"add_ingredient" = "Add ingredient";
+
+"ingredient" = "Ingredient";
+"amount"     = "Amount";
+"portions"   = "Portions";
+"unit" = "Unit";
+
+"unit.pcs"   = "pcs";
+"unit.g"     = "g";
+"unit.kg"    = "kg";
+"unit.ml"    = "ml";
+"unit.dl"    = "dl";
+"unit.l"     = "l";
+"unit.tsp"   = "tsp";
+"unit.tbsp"  = "tbsp";
+"unit.krm"   = "krm";
+"unit.pinch" = "pinch";
+
+
+
  
 "import_recipe_title" = "Import recipe";
 "import_recipe_question" = "Do you want to import this recipe into **My Recipes**?";

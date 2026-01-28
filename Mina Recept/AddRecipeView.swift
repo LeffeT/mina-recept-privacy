@@ -213,8 +213,9 @@ struct AddRecipeView: View {
             //.tint(.white)
             
             TextField(
-                L("amount", languageManager),
-                text: $ingredientAmount
+               L("amount", languageManager),
+               text: $ingredientAmount
+                
             )
             .keyboardType(.decimalPad)
             .modifier(fieldStyle)
@@ -232,9 +233,10 @@ struct AddRecipeView: View {
             } label: {
                 HStack {
                     Text(
-                        ingredientUnit.isEmpty
-                        ? L("unit", languageManager)
-                        : L("unit.\(ingredientUnit)", languageManager)
+                       // L("unit.pinch", languageManager)
+                       ingredientUnit.isEmpty
+                      ? L("unit", languageManager)
+                      : L("unit.\(ingredientUnit)", languageManager)
                     )
                     .foregroundColor(
                     ingredientUnit.isEmpty
