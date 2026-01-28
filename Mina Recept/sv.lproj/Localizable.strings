@@ -1,0 +1,46 @@
+/* 
+  Localizable.strings
+  Mina Recept
+
+  Created by Leif Tarvainen on 2026-01-03.
+  
+*/
+"settings_title" = "Inställningar";
+"theme_orange" = "Orange tema";
+"theme_green" = "Grönt tema";
+"theme_dark" = "Mörkt tema";
+"theme_light" = "Ljust tema";
+"language" = "Språk";
+"close" = "Stäng";
+
+"app_title" = "Mina Recept";
+"recipes" = "Recept";
+"settings" = "Inställningar";
+"untitled" = "Utan titel";
+"no_image" = "Ingen bild";
+"cancel" = "Avbryt";
+"take_photo" = "Ta foto";
+"choose_image" = "Välj bild";
+"save" = "Spara";
+"new_recipe" = "Nytt recept";
+"title" = "Titel";
+"instructions" = "Recept";
+"title_placeholder" = "Ex: Enkel tomatsoppa";
+"cancel" = "Avbryt";
+"change_image" = "Byt bild";
+"take_photo" = "Ta foto";
+"save" = "Spara";
+"edit_recipe" = "Redigera recept";
+"share" = "Dela";
+"edit" = "Redigera";
+"delete" = "Ta bort";
+"delete_recipe_question" = "Ta bort recept?";
+
+"share_open_in_app" = "👉 Öppna i Mina Recept";
+"share_recipe_title" = "🍽️ %@";
+
+"import_recipe_title" = "Importera recept";
+"import_recipe_question" = "Vill du importera detta recept till **Mina Recept**?";
+"import_recipe_already_imported" = "Receptet är redan importerat en gång!\nDela ett nytt recept.";
+"import" = "Importera";
+

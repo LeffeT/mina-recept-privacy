@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDocumentTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>Mina Recept</string>
+			<key>LSHandlerRank</key>
+			<string>Owner</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>com.se.leiftarvainen.minarecept</string>
+			</array>
+		</dict>
+		
+	</array>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleName</key>
+	<string>Mina Recept</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.0</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>com.se.leiftarvainen.minarecept</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>minarecept</string>
+			</array>
+		</dict>
+	</array>
+	<key>CFBundleVersion</key>
+	<string>1</string>
+	<key>Exported Type UTIs</key>
+	<array>
+		<dict>
+			<key>Conforms To</key>
+			<array>
+				<string>public.data</string>
+			</array>
+			<key>Description</key>
+			<string>Mina Recept File</string>
+			<key>Filename Extensins</key>
+			<array>
+				<string>minarecept</string>
+			</array>
+			<key>Identifier</key>
+			<string>com.se.leiftarvainen.minarecept
+</string>
+		</dict>
+	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>Appen behöver kameran för att ta bilder till recept</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Appen behöver åtkomst till bilder för att lägga till receptbilder</string>
+	<key>UILaunchScreen</key>
+	<dict>
+		<key>UIImageName</key>
+		<string></string>
+	</dict>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
+	</array>
+</dict>
+</plist>

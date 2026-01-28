@@ -1,0 +1,46 @@
+/* 
+  Localizable.strings
+  Mina Recept
+
+  Created by Leif Tarvainen on 2026-01-03.
+  
+*/
+"settings_title" = "Settings";
+"theme_orange" = "Orange theme";
+"theme_green" = "Green theme";
+"theme_dark" = "Dark theme";
+"theme_light" = "Light theme";
+"language" = "Language";
+"close" = "Close";
+
+"app_title" = "My Recipes";
+"recipes" = "Recipes";
+"settings" = "Settings";
+"untitled" = "Untitled";
+"no_image" = "No image";
+"cancel" = "Cancel";
+"take_photo" = "Take photo";
+"choose_image" = "Choose image";
+"save" = "Save";
+"new_recipe" = "New recipe";
+"title" = "Title";
+"instructions" = "Instructions";
+"title_placeholder" = "E.g. Simple tomato soup";
+"cancel" = "Cancel";
+"change_image" = "Change image";
+"take_photo" = "Take photo";
+"save" = "Save";
+"edit_recipe" = "Edit recipe";
+"share" = "Share";
+"edit" = "Edit";
+"delete" = "Delete";
+"delete_recipe_question" = "Delete recipe?";
+
+"share_open_in_app" = "👉 Open in My Recipes";
+"share_recipe_title" = "🍽️ %@";
+ 
+"import_recipe_title" = "Import recipe";
+"import_recipe_question" = "Do you want to import this recipe into **My Recipes**?";
+"import_recipe_already_imported" = "This recipe has already been imported once.\nShare a new recipe.";
+"import" = "Import";
+
