@@ -17,3 +17,20 @@ func displayName(
         return plural
     }
 }
+
+func unitKey(fromLocalized value: String) -> String {
+    let map: [String: String] = [
+        "st": "pcs",
+        "g": "g",
+        "kg": "kg",
+        "ml": "ml",
+        "dl": "dl",
+        "l": "l",
+        "tsk": "tsp",
+        "msk": "tbsp",
+        "kryddmått": "krm",
+        "nypa": "pinch"
+    ]
+
+    return map[value, default: value]
+}

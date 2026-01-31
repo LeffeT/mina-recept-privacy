@@ -320,6 +320,8 @@ struct AddRecipeView: View {
             IngredientListView(
                 ingredients: tempIngredients,
                 themeManager: themeManager,
+                languageManager: languageManager,
+                
                // scale: 1.0,   // 👈 VIKTIGT
                 onDelete: { ing in
                     tempIngredients.removeAll { $0.id == ing.id }

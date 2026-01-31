@@ -9,6 +9,7 @@ import SwiftUI
 struct IngredientListView: View {
     let ingredients: [TempIngredient]
     let themeManager: ThemeManager
+    let languageManager: LanguageManager
    // let scale: Double          // ✅ NY
     let onDelete: ((TempIngredient) -> Void)?   // valfri delete
 
@@ -20,7 +21,14 @@ struct IngredientListView: View {
                     ZStack(alignment: .trailing) {
 
                         HStack {
-                            Text("\(ing.amount.cleanString) \(ing.unit) \(ing.name)")
+                           // Text("\(ing.amount.cleanString) \(ing.unit) \(ing.name)")
+                            Text(
+                                IngredientFormatter.formattedLine(
+                                    ingredient: ing,
+                                    languageManager: languageManager
+                                )
+                            )
+
                                 .foregroundColor(.white)
 
                             Spacer()

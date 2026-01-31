@@ -59,11 +59,6 @@ struct EditRecipeView: View {
     private var imageHeight: CGFloat {
         UIDevice.current.userInterfaceIdiom == .pad ? 420 : 240
     }
-   // private var backgroundView: some View {
-    //    themeManager.currentTheme.backgroundGradient
-    //        .ignoresSafeArea()
-   // }
-    
     private var destructiveColor: Color {
         themeManager.currentTheme.destructiveColor
     }// portionsräknare
@@ -73,6 +68,12 @@ struct EditRecipeView: View {
     private var fieldStyle: some ViewModifier {
         FieldStyle(theme: themeManager)
     }
+        private func loadIngredientForEdit(_ ingredient: IngredientEntity) {
+          ingredientName = ingredient.name ?? ""
+          ingredientAmount = ingredient.amount.cleanString
+            ingredientUnit = unitKey(fromLocalized: ingredient.unit ?? "")
+      }
+   
     
     init(recipe: Recipe) {
         self.recipe = recipe
@@ -253,9 +254,11 @@ struct EditRecipeView: View {
                             pulse: $pulse,
                             addIngredient: addIngredient,
                             deleteIngredient: deleteIngredient,
+                            loadIngredientForEdit: loadIngredientForEdit, // ✅ VIKTIG
                             recipe: recipe,
                             destructiveColor: destructiveColor
                         )
+                        
                         
                         label(L("instructions", languageManager))
                         
@@ -283,11 +286,17 @@ struct EditRecipeView: View {
         }
         
         
+            
+            
+     
+        
         .onAppear {
             title = recipe.title ?? ""
             instructions = recipe.instructions ?? ""
-            
-            
+            // 👇 detta saknas
+              ingredientName = ""
+              ingredientAmount = ""
+              ingredientUnit = ""
             
             if let filename = recipe.imageFilename {
                 pickedImage = FileHelper.loadImage(filename: filename)
@@ -308,9 +317,15 @@ struct EditRecipeView: View {
                 }
             }
         }
-    }
-
+    }// Här Stängs body <----
+ 
+   
     
+    //private func loadIngredientForEdit(_ ingredient: IngredientEntity) {
+     //   ingredientName = ingredient.name ?? ""
+     //   ingredientAmount = ingredient.amount.cleanString
+    //    ingredientUnit = unitKey(fromLocalized: ingredient.unit ?? "")
+// }
     // MARK: - UI helpers (orörda)
     
     private func iconButton(
@@ -423,174 +438,178 @@ struct EditRecipeView: View {
         }
         
     }
+   
+
 }// EditrecipeView är stängd här <-----
     
-    struct IngredientFormSection: View {
-        @Binding var ingredientName: String
-        @Binding var ingredientAmount: String
-        @Binding var ingredientUnit: String
-        
-        let themeManager: ThemeManager
-        let languageManager: LanguageManager
-        let unitOptions: [String]
-        let isValid: Bool
-        //let hasSubmitted: Bool
-        //let pulse: Bool
-        @Binding var hasSubmitted: Bool
-        @Binding var pulse: Bool
-        let addIngredient: () -> Void
-        let deleteIngredient: (IngredientEntity) -> Void
-        let recipe: Recipe
-        let destructiveColor: Color
-        
-        private let fieldHeight: CGFloat = 52
-        private var fieldStyle: some ViewModifier {
-            FieldStyle(theme: themeManager)
-        }
-        
-        private var editorStyle: some ViewModifier {
-            EditorStyle(theme: themeManager)
-        }
- 
-        var body: some View {
-            // Group {
-            VStack(alignment: .leading, spacing: 8) {
-                Text(L("ingredient", languageManager))
-                    .font(.headline)
-                
-                    .foregroundColor(themeManager.currentTheme.primaryTextColor)
-                
-                TextField(L("ingredient", languageManager),text: $ingredientName)
-                    .modifier(fieldStyle)
-                    .tint(.white)
-                TextField(L("amount", languageManager),text: $ingredientAmount
-                )
-                .keyboardType(.decimalPad)
+struct IngredientFormSection: View {
+   
+    @Binding var ingredientName: String
+    @Binding var ingredientAmount: String
+    @Binding var ingredientUnit: String
+    
+    let themeManager: ThemeManager
+    let languageManager: LanguageManager
+    let unitOptions: [String]
+    let isValid: Bool
+    //let hasSubmitted: Bool
+    //let pulse: Bool
+    @Binding var hasSubmitted: Bool
+    @Binding var pulse: Bool
+    let addIngredient: () -> Void
+    let deleteIngredient: (IngredientEntity) -> Void
+    let loadIngredientForEdit: (IngredientEntity) -> Void
+
+    
+    let recipe: Recipe
+    let destructiveColor: Color
+    
+    private let fieldHeight: CGFloat = 52
+    private var fieldStyle: some ViewModifier {
+        FieldStyle(theme: themeManager)
+    }
+    
+    private var editorStyle: some ViewModifier {
+        EditorStyle(theme: themeManager)
+    }
+    
+    var body: some View {
+        // Group {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(L("ingredient", languageManager))
+                .font(.headline)
+            
+                .foregroundColor(themeManager.currentTheme.primaryTextColor)
+            
+            TextField(L("ingredient", languageManager),text: $ingredientName)
                 .modifier(fieldStyle)
-             
-                
-                Menu {
-                    ForEach(unitOptions, id: \.self) { unit in
-                        Button {
-                            ingredientUnit = unit
-                        } label: {
-                            Text(L("unit.\(unit)", languageManager))
-                               // .modifier(fieldStyle(theme: themeManager))
-                        }
+                .tint(.white)
+            TextField(L("amount", languageManager),text: $ingredientAmount
+            )
+            .keyboardType(.decimalPad)
+            .modifier(fieldStyle)
+            
+            
+            Menu {
+                ForEach(unitOptions, id: \.self) { unit in
+                    Button {
+                        ingredientUnit = unit
+                    } label: {
+                        Text(L("unit.\(unit)", languageManager))
+                        // .modifier(fieldStyle(theme: themeManager))
                     }
-                } label: {
-                    HStack {
-                        Text(
-                           // L("unit.pinch", languageManager)
-                           ingredientUnit.isEmpty
-                           ? L("unit", languageManager)
-                           : L("unit.\(ingredientUnit)", languageManager)
-                        )
-                        .foregroundColor(
-                            ingredientUnit.isEmpty
-                            ? themeManager.currentTheme.buttonBackground
-                            : themeManager.currentTheme.primaryTextColor
+                }
+            } label: {
+                HStack {
+                    Text(
+                        
+                        ingredientUnit.isEmpty
+                        ? L("unit", languageManager)
+                        : L("unit.\(ingredientUnit)", languageManager)
+                    )
+                    .foregroundColor(
+                        ingredientUnit.isEmpty
+                        ? themeManager.currentTheme.buttonBackground
+                        : themeManager.currentTheme.primaryTextColor
                             .opacity(ingredientUnit.isEmpty ? 0.9 : 1.5)
-                        )
-                        
-                        Spacer()
-                        
-                    }
-                    .padding(.horizontal, 16)
-                    .frame(height: fieldHeight)
-                    .background(
-                        RoundedRectangle(cornerRadius: 14)
-                            .fill(themeManager.currentTheme.buttonBackground)
                     )
+                    
+                    Spacer()
+                    
                 }
-                .buttonStyle(.plain)
-                
-                Button {
-                    hasSubmitted = true
+                .padding(.horizontal, 16)
+                .frame(height: fieldHeight)
+                .background(
+                    RoundedRectangle(cornerRadius: 14)
+                        .fill(themeManager.currentTheme.buttonBackground)
+                )
+            }
+            .buttonStyle(.plain)
+            
+            Button {
+                hasSubmitted = true
+                pulse = false
+                addIngredient()
+            } label: {
+                Text(L("add_ingredient", languageManager))
+                    .font(.headline)
+                    .foregroundColor(.white)
+                    .padding(.vertical, 12)
+                    .padding(.horizontal, 24)
+            }// blinkande text
+            .frame(maxWidth: .infinity)
+            .opacity(
+                isValid && !hasSubmitted
+                ? (pulse ? 1.0 : 0.55)
+                : 0.4
+            )
+            .scaleEffect(isValid && !hasSubmitted && pulse ? 1.03 : 0.8)
+            .disabled(!isValid)
+            .animation(
+                isValid && !hasSubmitted
+                ? .easeInOut(duration: 1.0).repeatForever(autoreverses: true)
+                : .default,
+                value: pulse
+            )
+            .buttonStyle(.plain)
+            .onChange(of: isValid) {
+                if isValid && !hasSubmitted {
                     pulse = false
-                    addIngredient()
-                } label: {
-                    Text(L("add_ingredient", languageManager))
-                        .font(.headline)
-                        .foregroundColor(.white)
-                        .padding(.vertical, 12)
-                        .padding(.horizontal, 24)
-                }// blinkande text 
-                .frame(maxWidth: .infinity)
-                .opacity(
-                    isValid && !hasSubmitted
-                    ? (pulse ? 1.0 : 0.55)
-                    : 0.4
-                )
-                .scaleEffect(isValid && !hasSubmitted && pulse ? 1.03 : 0.8)
-                .disabled(!isValid)
-                .animation(
-                    isValid && !hasSubmitted
-                    ? .easeInOut(duration: 1.0).repeatForever(autoreverses: true)
-                    : .default,
-                    value: pulse
-                )
-                .buttonStyle(.plain)
-                .onChange(of: isValid) {
-                    if isValid && !hasSubmitted {
-                        pulse = false
-                        DispatchQueue.main.async {
-                            pulse = true
-                        }
-                    } else {
-                        pulse = false
+                    DispatchQueue.main.async {
+                        pulse = true
                     }
+                } else {
+                    pulse = false
                 }
-                .onChange(of: ingredientName) {
-                    hasSubmitted = false
-                }
-                .onChange(of: ingredientAmount) {
-                    hasSubmitted = false
-                }
-                .onChange(of: ingredientUnit) {
-                    hasSubmitted = false
-                }
-                .buttonStyle(.plain)
-                
-                //färg på fältbakgrund
-                ForEach(recipe.ingredientArray) { ingredient in
-                    HStack {
-                        Text("\(ingredient.amount.cleanString) \(ingredient.unit ?? "") \(ingredient.name ?? "")")
-                            .foregroundColor(themeManager.currentTheme.primaryTextColor)
-                        Spacer()
-                        Button {
-                            deleteIngredient(ingredient)
-                        } label: {
-                            Image(systemName: "trash")
-                                .foregroundColor(destructiveColor)
-                        }
-                        .buttonStyle(.plain)
-                    }
-                    .padding(12)
-                        .modifier(FieldStyle(theme: themeManager)
+            }
+            .onChange(of: ingredientName) {
+                hasSubmitted = false
+            }
+            .onChange(of: ingredientAmount) {
+                hasSubmitted = false
+            }
+            .onChange(of: ingredientUnit) {
+                hasSubmitted = false
+            }
+            .buttonStyle(.plain)
+            
+            
+            //färg på fältbakgrund
+            ForEach(recipe.ingredientArray) { ingredient in
+                HStack {
+                   // Text("\(ingredient.amount.cleanString) \(ingredient.unit ?? "") \(ingredient.name ?? "")")
+                    Text(
+                        "\(ingredient.amount.cleanString) " +
+                        L("unit.\(ingredient.unit ?? "")", languageManager) +
+                        " \(ingredient.name ?? "")"
                     )
+
+                        .foregroundColor(themeManager.currentTheme.primaryTextColor)
+
+                    Spacer()
+
+                    Button {
+                        deleteIngredient(ingredient)
+                    } label: {
+                        Image(systemName: "trash")
+                            .foregroundColor(destructiveColor)
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(12)
+                .background(
+                    RoundedRectangle(cornerRadius: 14)
+                        .fill(themeManager.currentTheme.buttonBackground)
+                )
+                .onTapGesture {
+                    loadIngredientForEdit(ingredient)   // ✅ ENDA platsen
+                }
+            }
+
+     
                 }
             }
         }
-        
-        
-        private func themedTextField(
-            _ key: String,
-            text: Binding<String>,
-            keyboard: UIKeyboardType = .default
-        ) -> some View {
-            TextField(L(key, languageManager), text: text)
-                .keyboardType(keyboard)
-                .tint(themeManager.currentTheme.primaryTextColor)
-                .padding(12)
-                .background(themeManager.currentTheme.cardBackground)
-                .clipShape(RoundedRectangle(cornerRadius: 14))
-                .foregroundColor(themeManager.currentTheme.primaryTextColor)
-        }
-        
-        private func label(_ text: String) -> some View {
-            Text(text)
-                .foregroundColor(themeManager.currentTheme.primaryTextColor.opacity(0.85))
-        }
-    }
+
+
 
