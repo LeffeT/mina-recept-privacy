@@ -13,13 +13,13 @@ struct FieldStyle: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .foregroundStyle(.white) 
+            //.foregroundStyle(.white)
             .padding(12)
+            .tint(.white) // 👈 MARKÖREN
             .background(
                 RoundedRectangle(cornerRadius: 14)
                     .fill(theme.currentTheme.buttonBackground)
             )
-            //.foregroundStyle(theme.currentTheme.primaryTextColor)
-            .foregroundStyle(Color.white)
+            .foregroundStyle(theme.currentTheme.primaryTextColor)
     }
 }

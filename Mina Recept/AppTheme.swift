@@ -12,8 +12,11 @@ enum AppTheme: String, CaseIterable, Identifiable {
 
     case orange
     case green
-    case dark
+    case black
     case blue
+    case pink
+    case red
+
 
     // MARK: - Identifiable
     var id: String { rawValue }
@@ -23,8 +26,10 @@ enum AppTheme: String, CaseIterable, Identifiable {
         switch self {
         case .orange: return "Orange"
         case .green:  return "Grön"
-        case .dark:   return "Mörk"
+        case .black:   return "Mörk"
         case .blue:   return "Blå"
+        case .pink:   return "Rosa"
+        case .red:    return "Röd"
         }
     }
 
@@ -52,7 +57,7 @@ enum AppTheme: String, CaseIterable, Identifiable {
                 endPoint: .bottom
             )
 
-        case .dark:
+        case .black:
             return LinearGradient(
                 colors: [
                     Color.black,
@@ -71,6 +76,25 @@ enum AppTheme: String, CaseIterable, Identifiable {
                 startPoint: .top,
                 endPoint: .bottom
             )
+        case .pink:
+            return LinearGradient(
+                colors: [
+                    Color(red: 0.95, green: 0.55, blue: 0.70),
+                    Color(red: 0.55, green: 0.15, blue: 0.35)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        case .red:
+            return LinearGradient(
+                colors: [
+                    Color(red: 0.80, green: 0.15, blue: 0.15),
+                    Color(red: 0.35, green: 0.05, blue: 0.05)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+
         }
     }
 
@@ -79,8 +103,10 @@ enum AppTheme: String, CaseIterable, Identifiable {
         switch self {
         case .orange: return Color.white.opacity(0.18)
         case .green:  return Color.white.opacity(0.22)
-        case .dark:   return Color.white.opacity(0.15)
+        case .black:   return Color.white.opacity(0.15)
         case .blue:   return Color.white.opacity(0.20)
+        case .pink:   return Color.white.opacity(0.18)
+        case .red:    return Color.white.opacity(0.16)
         }
     }
     // MARK: - Kortbakgrund (receptkort, ingredienser m.m.)
@@ -88,8 +114,10 @@ enum AppTheme: String, CaseIterable, Identifiable {
         switch self {
         case .orange: return Color.white.opacity(0.10)
         case .green:  return Color.white.opacity(0.12)
-        case .dark:   return Color.white.opacity(0.08)
+        case .black:   return Color.white.opacity(0.08)
         case .blue:   return Color.white.opacity(0.12)
+        case .pink:   return Color.white.opacity(0.11)
+        case .red:    return Color.white.opacity(0.09)
         }
     }
 
@@ -102,8 +130,10 @@ enum AppTheme: String, CaseIterable, Identifiable {
         switch self {
         case .orange: return .red.opacity(0.9)
         case .green:  return .red.opacity(0.85)
-        case .dark:   return .red.opacity(0.75)
+        case .black:   return .red.opacity(0.75)
         case .blue:   return .red.opacity(0.85)
+        case .pink:   return .white.opacity(0.85)
+        case .red:   return .white.opacity(0.85)
         }
     }
 
@@ -112,8 +142,9 @@ enum AppTheme: String, CaseIterable, Identifiable {
         switch self {
         case .orange: return .orange
         case .green:  return .green
-        case .dark:   return .gray
+        case .black:   return .gray
         case .blue:   return .blue
-        }
+        case .pink:   return .pink
+        case .red:    return .red        }
     }
 }

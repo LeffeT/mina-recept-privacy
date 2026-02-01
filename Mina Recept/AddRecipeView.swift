@@ -22,6 +22,8 @@ struct AddRecipeView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.managedObjectContext) private var context
     @EnvironmentObject var themeManager: ThemeManager
+    @EnvironmentObject var theme: ThemeManager
+    
     
     @StateObject private var languageManager = LanguageManager.shared
     
@@ -176,30 +178,29 @@ struct AddRecipeView: View {
             
             Text(L("new_recipe", languageManager))
                 .font(.largeTitle.bold())
-                .foregroundColor(themeManager.currentTheme.primaryTextColor)
+                //.foregroundColor(themeManager.currentTheme.primaryTextColor)
+                .foregroundStyle(themeManager.currentTheme.primaryTextColor)
                 .frame(maxWidth: .infinity, alignment: .center)
             
             label(L("title", languageManager))
             TextField(L("title_placeholder", languageManager), text: $title)
                 .modifier(fieldStyle)
-            // .tint(.white)
-            
-            //label(L("instructions", languageManager))
-            // TextEditor(text: $instructions)
-            //    .modifier(editorStyle)
-            //   .tint(.white)
+                .foregroundStyle(themeManager.currentTheme.primaryTextColor)
+        
             
             label(L("portions", languageManager))
             
             TextField(L("portions", languageManager),
                       text: $basePortions,
+                      
             )
             .keyboardType(.numberPad)
-            .tint(.white)
+            //.tint(.white)
             .padding(12)
             .background(themeManager.currentTheme.buttonBackground)
             .clipShape(RoundedRectangle(cornerRadius: 14))
-            .foregroundColor(themeManager.currentTheme.primaryTextColor)
+            .foregroundStyle(themeManager.currentTheme.primaryTextColor)
+            .tint(themeManager.currentTheme.primaryTextColor)
             
             // INGREDIENT INPUT
             label(L("ingredients", languageManager))
@@ -209,6 +210,7 @@ struct AddRecipeView: View {
                 text: $ingredientName
             )
             .modifier(fieldStyle)
+            .foregroundStyle(themeManager.currentTheme.primaryTextColor)
             
             //.tint(.white)
             
@@ -219,7 +221,9 @@ struct AddRecipeView: View {
             )
             .keyboardType(.decimalPad)
             .modifier(fieldStyle)
-            //.tint(.white)
+            .foregroundStyle(themeManager.currentTheme.primaryTextColor)
+            
+          
             
             
             Menu {
@@ -257,6 +261,7 @@ struct AddRecipeView: View {
                 .background(
                     RoundedRectangle(cornerRadius: 14)
                         .fill(themeManager.currentTheme.buttonBackground)
+                        .foregroundStyle(themeManager.currentTheme.primaryTextColor)
                 )
             }
             .buttonStyle(.plain)
@@ -333,6 +338,7 @@ struct AddRecipeView: View {
             label(L("instructions", languageManager))
             TextEditor(text: $instructions)
                 .modifier(editorStyle)
+                .tint(theme.currentTheme.primaryTextColor)
                
         }
         .frame(maxWidth: 520)

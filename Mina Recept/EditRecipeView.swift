@@ -268,7 +268,7 @@ struct EditRecipeView: View {
                     
                     TextEditor(text: $instructions)
                     
-                        //.tint(.white)          // 👈 markören
+                        .tint(.white)          // 👈 markören
                         .font(.body)
                         .foregroundColor(themeManager.currentTheme.primaryTextColor)
                         .padding(12)

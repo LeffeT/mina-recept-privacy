@@ -8,8 +8,10 @@
 "settings_title" = "Inställningar";
 "theme_orange" = "Orange tema";
 "theme_green" = "Grönt tema";
-"theme_dark" = "Mörkt tema";
-"theme_light" = "Ljust tema";
+"theme_black" = "Svart tema";
+"theme_blue" = "Blå tema";
+"theme_red" = "Röd tema";
+"theme_pink" = "Rosa tema";
 "language" = "Språk";
 "close" = "Stäng";
 

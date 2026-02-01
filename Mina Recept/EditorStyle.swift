@@ -13,15 +13,14 @@ struct EditorStyle: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .foregroundStyle(.white) 
             .font(.body)
+            .foregroundStyle(theme.currentTheme.primaryTextColor)
             .padding(12)
             .frame(minHeight: 160)
             .background(
                 RoundedRectangle(cornerRadius: 14)
                     .fill(theme.currentTheme.buttonBackground)
             )
-            .foregroundStyle(Color.white)
             .scrollContentBackground(.hidden)
     }
 }

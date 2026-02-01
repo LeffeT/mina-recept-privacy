@@ -85,9 +85,9 @@ struct RecipeDetailView: View {
                         .foregroundColor(themeManager.currentTheme.primaryTextColor)
                         
                         // Hjälptext
-                      //  Text("🔁 = ändras med portioner")
-                         //   .font(.caption)
-                         //   .foregroundStyle(Color.white)
+                        //  Text("🔁 = ändras med portioner")
+                        //   .font(.caption)
+                        //   .foregroundStyle(Color.white)
                         
                         // Ingredienslista
                         VStack(alignment: .leading, spacing: 8) {
@@ -115,15 +115,15 @@ struct RecipeDetailView: View {
                     // MARK: - Instruktioner
                     if let instructions = recipe.instructions, !instructions.isEmpty {
                         VStack(alignment: .leading, spacing: 12) {
-
+                            
                             Text(L("instructions", languageManager))
                                 .font(.headline)
                                 .foregroundColor(
                                     themeManager.currentTheme.primaryTextColor.opacity(0.85)
                                 )
-
+                            
                             Divider().opacity(0.2)
-
+                            
                             Text(instructions)
                                 .foregroundColor(
                                     themeManager.currentTheme.primaryTextColor.opacity(0.9)
@@ -143,25 +143,41 @@ struct RecipeDetailView: View {
                 .padding(.horizontal, 16)
                 .padding(.bottom, 32)
             }
-        }
-        // MARK: - Toolbar
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Menu {
-                    Button(L("share", languageManager)) {
-                        activeSheet = .share
+            //}
+            // MARK: - Toolbar
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    Menu {
+                        Button(L("share", languageManager)) {
+                            activeSheet = .share
+                        }
+                        
+                        Button(L("edit", languageManager)) {
+                            activeSheet = .edit
+                        }
+                        
+                        Button(L("delete", languageManager), role: .destructive) {
+                            showDeleteAlert = true
+                            
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis")
                     }
-                    
-                    Button(L("edit", languageManager)) {
-                        activeSheet = .edit
-                    }
-                    
-                    Button(L("delete", languageManager), role: .destructive) {
-                        showDeleteAlert = true
-                    }
-                } label: {
-                    Image(systemName: "ellipsis")
                 }
+            }
+            // MARK: - Delete alert
+            .confirmationDialog(
+                L("delete_recipe_question", languageManager),
+                isPresented: $showDeleteAlert,
+                titleVisibility: .visible
+            ) {
+                Button(L("delete", languageManager), role: .destructive) {
+                    context.delete(recipe)
+                    try? context.save()
+                    dismiss()
+                }
+                
+                Button(L("cancel", languageManager), role: .cancel) {}
             }
         }
         // MARK: - Sheets
@@ -183,18 +199,8 @@ struct RecipeDetailView: View {
                     }
                 )
                 
-                // MARK: - Delete alert
-                .alert(
-                    L("delete_recipe_question", languageManager),
-                    isPresented: $showDeleteAlert
-                ) {
-                    Button(L("delete", languageManager), role: .destructive) {
-                        context.delete(recipe)
-                        try? context.save()
-                        dismiss()
-                    }
-                    Button(L("cancel", languageManager), role: .cancel) {}
-                }
+               
+
             }
         }
     }

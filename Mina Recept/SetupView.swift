@@ -36,13 +36,21 @@ struct SetupView: View {
                         themeManager.currentTheme = .green
                     }
 
-                    Button(L("theme_dark", languageManager)) {
-                        themeManager.currentTheme = .dark
+                    Button(L("theme_black", languageManager)) {
+                        themeManager.currentTheme = .black
                     }
 
-                    Button(L("theme_light", languageManager)) {
+                    Button(L("theme_blue", languageManager)) {
                         themeManager.currentTheme = .blue
                     }
+                    Button(L("theme_pink", languageManager)) {
+                        themeManager.currentTheme = .pink
+                    }
+
+                    Button(L("theme_red", languageManager)) {
+                        themeManager.currentTheme = .red
+                    }
+
                 }
                 .font(.headline)
                 .foregroundColor(themeManager.currentTheme.primaryTextColor)

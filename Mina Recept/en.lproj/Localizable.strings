@@ -8,8 +8,11 @@
 "settings_title" = "Settings";
 "theme_orange" = "Orange theme";
 "theme_green" = "Green theme";
-"theme_dark" = "Dark theme";
-"theme_light" = "Light theme";
+"theme_black" = "Black theme";
+"theme_blue" = "Blue theme";
+"theme_pink" = "Pink theme";
+"theme_red" = "Red theme";
+
 "language" = "Language";
 "close" = "Close";
 
