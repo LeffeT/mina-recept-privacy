@@ -19,24 +19,23 @@ import UIKit
 struct ShareSheet: UIViewControllerRepresentable {
     @EnvironmentObject var languageManager: LanguageManager
 
-
     let title: String
     let instructions: String
     let image: UIImage?
     let ingredients: [PendingIngredient]
-  
-
 
     func makeUIViewController(context: Context) -> UIActivityViewController {
+    #if DEBUG
         print("INGREDIENTS COUNT =", ingredients.count)
         print("🟡 ShareSheet opened")
-        print("INGREDIENTS COUNT =", ingredients.count)
+    #endif
 
-
+        // 🔑 Ett ID per share-session
         let id = UUID().uuidString
+
+        // 🖼️ Bild är valfri
         var imageFilename: String? = nil
 
-        // 📸 Bild är VALFRI
         if let image = image,
            let data = image.jpegData(compressionQuality: 0.85) {
 
@@ -48,19 +47,8 @@ struct ShareSheet: UIViewControllerRepresentable {
             imageFilename = filename
         }
 
-        let payload = PendingRecipePayload(
-            id: id,
-            title: title,
-            instructions: instructions,
-            imageFilename: imageFilename,
-            ingredients: ingredients
-        )
-        print("🟡 About to save payload:", payload.id)
-        PendingRecipePayloadStore.save(payload)
-        print("📦 Pending payload saved:", id)
-
-      
-        let linkString = "minarecept://import?id=\(payload.id)"
+        // 🔗 Deep link (använder ID direkt)
+        let linkString = "minarecept://import?id=\(id)"
 
         let header = String(
             format: L("share_recipe_title", languageManager),
@@ -76,14 +64,42 @@ struct ShareSheet: UIViewControllerRepresentable {
         \(linkString)
         """
 
-        return UIActivityViewController(
+        let controller = UIActivityViewController(
             activityItems: [text],
             applicationActivities: nil
         )
+
+        // ✅ ENDA platsen där payload sparas
+        controller.completionWithItemsHandler = { _, completed, _, _ in
+            guard completed else {
+            #if DEBUG
+                print("❎ Share cancelled – no payload saved")
+            #endif
+
+                return
+            }
+
+            let payload = PendingRecipePayload(
+                id: id,
+                title: title,
+                instructions: instructions,
+                imageFilename: imageFilename,
+                ingredients: ingredients
+            )
+          #if DEBUG
+            print("✅ Share confirmed – saving payload:", payload.id)
+           #endif
+            
+            PendingRecipePayloadStore.save(payload)
+        }
+
+        return controller
     }
 
     func updateUIViewController(
         _ uiViewController: UIActivityViewController,
         context: Context
-    ) {}
+    ) {
+        // Nothing to update
+    }
 }

@@ -19,6 +19,18 @@ import CoreData
 @main
 struct MatlagningApp: App {
     
+    
+    
+    init() {
+        if let url = FileManager.default.url(forUbiquityContainerIdentifier: nil) {
+            print("✅ iCloud container:", url)
+        } else {
+            print("❌ iCloud container NOT available")
+        }
+    }
+ 
+    @State private var presentedRecipeID: String?
+
     @UIApplicationDelegateAdaptor(AppDelegate.self)
        var appDelegate
 
@@ -36,7 +48,7 @@ struct MatlagningApp: App {
 
     var body: some Scene {
         WindowGroup {
-
+         
             NavigationStack {
                 StartView()
             }
@@ -51,20 +63,40 @@ struct MatlagningApp: App {
 
             // 📬 Tar emot deep links
             .onOpenURL { url in
+                #if DEBUG
                 print("📬 onOpenURL triggered")
                 print("➡️ URL received:", url.absoluteString)
+                #endif
                 deepLinkManager.handle(url)
             }
+            .onChange(of: deepLinkManager.pendingRecipeID) { _, newID in
+                guard let id = newID else { return }
 
-            // 📥 Visar import-landing när recept kommer via deep link
-            .sheet(item: pendingRecipeBinding) { pending in
-                SharedRecipeLandingView(recipeID: pending.id)
-                    .environmentObject(languageManager)   // ⭐ DENNA RAD
-                    .onAppear {
-                        print("📄 Presenting SharedRecipeLandingView for recipeID:", pending.id)
-                    }
+                presentedRecipeID = id        // kopiera till UI-state
+                deepLinkManager.clear()       // konsumera direkt
+         
+
             }
-        }
+            // 📥 Visar import-landing när recept kommer via deep link
+            .sheet(
+                isPresented: Binding(
+                    get: { presentedRecipeID != nil },
+                    set: { if !$0 { presentedRecipeID = nil } }
+                )
+            ) {
+                if let recipeID = presentedRecipeID {
+                    SharedRecipeLandingView(recipeID: recipeID)
+                        .environmentObject(languageManager)
+            #if DEBUG
+                        .onAppear {
+                            print("📄 Presenting SharedRecipeLandingView for recipeID:", recipeID)
+                        }
+            #endif
+                }
+            }
+
+
+    }
     }
 
     // MARK: - Binding för sheet(item:)
@@ -72,14 +104,18 @@ struct MatlagningApp: App {
         Binding(
             get: {
                 if let id = deepLinkManager.pendingRecipeID {
+                    #if DEBUG
                     print("🟡 pendingRecipeID detected:", id)
+                    #endif
                     return PendingRecipe(id: id)
                 }
                 return nil
             },
             set: { newValue in
                 if newValue == nil {
+                    #if DEBUG
                     print("🧹 Clearing pendingRecipeID")
+                    #endif
                     deepLinkManager.clear()
                 }
             }

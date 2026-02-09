@@ -8,9 +8,17 @@
 
 import CoreData
 
-enum CoreDataStack {
+final class CoreDataStack {
 
-    static let shared: NSPersistentContainer = {
+    static let shared = CoreDataStack()
+
+    let container: NSPersistentContainer
+
+    var viewContext: NSManagedObjectContext {
+        container.viewContext
+    }
+
+    private init() {
         let modelURL = Bundle.main.url(
             forResource: "Matlagning",
             withExtension: "momd"
@@ -18,7 +26,7 @@ enum CoreDataStack {
 
         let model = NSManagedObjectModel(contentsOf: modelURL)!
 
-        let container = NSPersistentContainer(
+        container = NSPersistentContainer(
             name: "Matlagning",
             managedObjectModel: model
         )
@@ -29,9 +37,10 @@ enum CoreDataStack {
             }
         }
 
-        container.viewContext.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
-        container.viewContext.automaticallyMergesChangesFromParent = true
+        container.viewContext.mergePolicy =
+            NSMergeByPropertyObjectTrumpMergePolicy
 
-        return container
-    }()
+        container.viewContext.automaticallyMergesChangesFromParent = true
+    }
 }
+

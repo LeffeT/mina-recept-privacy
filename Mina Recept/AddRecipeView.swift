@@ -107,6 +107,7 @@ struct AddRecipeView: View {
                 pickedImage = image
                 showPhotoLibrary = false
             }
+            .scrollIndicators(.hidden)
         }
     }
     
@@ -369,7 +370,9 @@ struct AddRecipeView: View {
             }
             
             private func saveRecipe() {
+               #if DEBUG
                 print("💾 saveRecipe called")
+               #endif
                 let new = Recipe(context: context)
                 new.id = UUID()
                 new.title = title
@@ -405,7 +408,9 @@ struct AddRecipeView: View {
                     try context.save()
                     dismiss()
                 } catch {
+                   #if DEBUG
                     print("❌ Kunde inte spara:", error)
+                   #endif
                 }
             }
             

@@ -19,6 +19,13 @@ struct StartView: View {
     @State private var goToHome = false
     @State private var showSetup = false
     @State private var isPressing = false
+    @State private var showICloudAlert = false
+
+    
+    private func isICloudAvailable() -> Bool {
+        FileManager.default.ubiquityIdentityToken != nil
+    }
+
 
     var body: some View {
         ZStack {
@@ -122,8 +129,24 @@ struct StartView: View {
                 // =========================
                 Spacer()
             }
+       // }
+    //}
+    .onAppear {
+        if !isICloudAvailable() {
+            showICloudAlert = true
         }
-    
+    }
+    .alert("iCloud behövs", isPresented: $showICloudAlert) {
+        Button("Öppna Inställningar") {
+            if let url = URL(string: UIApplication.openSettingsURLString) {
+                UIApplication.shared.open(url)
+            }
+        }
+        Button("OK", role: .cancel) {}
+    } message: {
+        Text("För att dela och importera recept behöver iCloud Drive vara aktiverat.")
+    }
+}
     
    
         // =========================

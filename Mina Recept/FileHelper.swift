@@ -36,9 +36,13 @@ enum FileHelper {
         let url = fileURL(for: filename)
         do {
             try data.write(to: url, options: [.atomic])
+           #if DEBUG
             print("✅ Bild sparad i App Group:", url.lastPathComponent)
+           #endif
         } catch {
+           #if DEBUG
             print("❌ Kunde inte spara bild:", error)
+           #endif
         }
     }
 
@@ -49,7 +53,9 @@ enum FileHelper {
             let data = try? Data(contentsOf: url),
             let image = UIImage(data: data)
         else {
+           #if DEBUG
             print("⚠️ Kunde inte läsa bild:", filename)
+           #endif
             return nil
         }
         return image
@@ -66,9 +72,13 @@ enum FileHelper {
         let url = fileURL(for: filename)
         do {
             try FileManager.default.removeItem(at: url)
+            #if DEBUG
             print("🗑️ Bild borttagen:", url.lastPathComponent)
+            #endif
         } catch {
+            #if DEBUG
             print("⚠️ Kunde inte ta bort bild:", error)
+            #endif
         }
     }
 }

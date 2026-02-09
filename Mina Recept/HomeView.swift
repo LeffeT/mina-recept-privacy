@@ -44,9 +44,13 @@ struct HomeView: View {
 
         do {
             try context.save()
+            #if DEBUG
             print("✅ baseServings fixad")
+            #endif
         } catch {
+            #if DEBUG
             print("❌ Kunde inte spara:", error)
+            #endif
         }
     }
 
@@ -136,7 +140,9 @@ struct HomeView: View {
             }
             // 🔧 Kör EN GÅNG för att fylla sortTitle på gamla recept
             .onAppear {
+              #if DEBUG
                 print("DEBUG: HomeView visas")
+              #endif
                 backfillSortTitlesIfNeeded()
             }
         }

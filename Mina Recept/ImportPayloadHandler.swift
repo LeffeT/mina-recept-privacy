@@ -2,93 +2,153 @@
 //  ImportPayloadHandler.swift
 //  Mina Recept
 //
-//  Created by Leif Tarvainen on 2026-01-01.
+//  Created by Leif Tarvainen on 2026-02-09.
 //
 
-
-//
-//  ImportPayloadHandler.swift
-//  Mina Recept
-//
 
 import Foundation
 import CoreData
 import os
 
-
-
 enum ImportPayloadHandler {
+    private static var inProgress = Set<String>() 
 
-    // 📊 Central logger för import
+    // MARK: - Logger
     private static let logger = Logger(
-        subsystem: "com.se.leiftarvainen.minarecept",
+        subsystem: "com.se.leiftarvainen.minareceipt",
         category: "import"
     )
 
+    // MARK: - Core import från payload
+    private static func importFromPayload(
+        _ payload: PendingRecipePayload,
+        recipeID: String,
+        context: NSManagedObjectContext,
+        onSuccess: @escaping () -> Void
+    ) {
+        logger.info("📦 Importerar payload id: \(payload.id)")
+
+        // 3 Skapa Recipe
+        let recipe = Recipe(context: context)
+        recipe.id = UUID(uuidString: payload.id) ?? UUID()
+
+        let finalTitle = payload.title.isEmpty ? "Nytt recept" : payload.title
+        recipe.title = finalTitle
+        recipe.sortTitle = finalTitle.sortKey(locale: LanguageManager.shared.locale)
+        recipe.instructions = payload.instructions
+        recipe.date = Date()
+        recipe.imageFilename = payload.imageFilename
+
+        // 4 Ingredienser
+        for item in payload.ingredients {
+            let ingredient = IngredientEntity(context: context)
+            ingredient.id = UUID()
+            ingredient.name = item.name
+            ingredient.amount = item.amount
+            ingredient.unit = item.unit
+            ingredient.recipe = recipe
+        }
+
+        // 5 Spara
+        do {
+            try context.save()
+
+            // Rensa payload (både lokalt + iCloud)
+            PendingRecipePayloadStore.clear(id: recipeID)
+            iCloudPayloadStore.clear(id: recipeID)
+
+            DispatchQueue.main.async {
+                onSuccess()
+            }
+
+            logger.info("✅ Import klar för recipeID: \(recipeID)")
+        } catch {
+            logger.error("❌ Import failed – \(error.localizedDescription)")
+        }
+    }
+
+    // MARK: - Publik entry point
     static func importPendingRecipe(
         recipeID: String,
         onSuccess: @escaping () -> Void,
         onAlreadyImported: @escaping () -> Void
     ) {
-        logger.info("Import start – recipeID: \(recipeID)")
+        logger.info("➡️ Import start – recipeID: \(recipeID)")
+        // 🔒 Import-lås per recipeID
+        if inProgress.contains(recipeID) {
+            logger.info("⏳ Import already in progress – \(recipeID)")
 
-        // 1️⃣ Hämta payload
-        guard let payload = PendingRecipePayloadStore.load() else {
-            logger.warning("Import skipped – already imported – recipeID: \(recipeID)")
             DispatchQueue.main.async {
                 onAlreadyImported()
             }
             return
         }
 
-        // 2️⃣ Core Data context
+        inProgress.insert(recipeID)
+
         let context = CoreDataStack.shared.viewContext
 
-        // 3️⃣ Skapa Recipe
-        let recipe = Recipe(context: context)
-
-        recipe.id = UUID(uuidString: payload.id) ?? UUID()
-
-        let finalTitle = payload.title.isEmpty ? "Nytt recept" : payload.title
-        recipe.title = finalTitle
-
-        // ✅ KORREKT svensk sortering
-        //recipe.sortTitle = swedishSortKey(from: finalTitle)
-        let locale = LanguageManager.shared.locale
-        recipe.sortTitle = finalTitle.sortKey(locale: locale)
-
-
-        recipe.instructions = payload.instructions
-        recipe.date = Date()
-        recipe.imageFilename = payload.imageFilename
-        recipe.title = finalTitle
-        
-        // ✅ LÄGG TILL INGREDIENSER HÄR
-            for item in payload.ingredients {
-                let ingredient = IngredientEntity(context: context)
-                ingredient.id = UUID()
-                ingredient.name = item.name
-                ingredient.amount = item.amount
-                ingredient.unit = item.unit
-                ingredient.recipe = recipe
-            }
-
-
-        // 4️⃣ Spara
-        do {
-            try context.save()
-
-            PendingRecipePayloadStore.clear()
-            logger.info("Import success – recipeID: \(recipeID)")
-
+        // 1 Finns receptet redan?
+        if recipeExists(id: recipeID, context: context) {
+            logger.info("⚠️ Recipe already imported – \(recipeID)")
+            inProgress.remove(recipeID)   // 👈 VIKTIG
             DispatchQueue.main.async {
-                onSuccess()
+                onAlreadyImported()
             }
-
-        } catch {
-            logger.error(
-                "Import failed – recipeID: \(recipeID) – error: \(error.localizedDescription)"
-            )
+            return
         }
+
+
+        // 2 Finns payload lokalt?
+        if let payload = PendingRecipePayloadStore.load(id: recipeID) {
+            logger.info("📂 Payload hittad lokalt")
+            importFromPayload(
+                payload,
+                recipeID: recipeID,
+                context: context,
+                onSuccess: {
+                    inProgress.remove(recipeID)   // 👈 VIKTIG RAD
+                    DispatchQueue.main.async {
+                        onSuccess()
+                    }
+                }
+            )
+            return
+
+        }
+
+        // 3 iCloud fallback
+        if let payload = iCloudPayloadStore.load(id: recipeID) {
+            logger.info("☁️ Payload laddad från iCloud")
+            importFromPayload(
+                payload,
+                recipeID: recipeID,
+                context: context,
+                onSuccess: onSuccess
+            )
+            return
+        }
+
+       // logger.error("❌ No payload found for recipeID: \(recipeID)")
+        logger.info("ℹ️ No payload found – assuming recipe already imported: \(recipeID)")
+        inProgress.remove(recipeID)
+
+        DispatchQueue.main.async {
+            onAlreadyImported()
+        }
+        return
+
+    }
+
+    // MARK: - Helpers
+    private static func recipeExists(
+        id: String,
+        context: NSManagedObjectContext
+    ) -> Bool {
+        let request: NSFetchRequest<Recipe> = Recipe.fetchRequest()
+        request.predicate = NSPredicate(format: "id == %@", id)
+        request.fetchLimit = 1
+
+        return (try? context.count(for: request)) ?? 0 > 0
     }
 }

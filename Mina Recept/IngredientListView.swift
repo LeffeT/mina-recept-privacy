@@ -19,29 +19,30 @@ struct IngredientListView: View {
                 ForEach(ingredients) { ing in
 
                     ZStack(alignment: .trailing) {
-
+                        
                         HStack {
-                           // Text("\(ing.amount.cleanString) \(ing.unit) \(ing.name)")
+                            // Text("\(ing.amount.cleanString) \(ing.unit) \(ing.name)")
                             Text(
                                 IngredientFormatter.formattedLine(
                                     ingredient: ing,
                                     languageManager: languageManager
                                 )
                             )
-
-                                .foregroundColor(.white)
-
+                            
+                            .foregroundColor(.white)
+                            
                             Spacer()
                         }
-
+                        
                         if let onDelete {
                             Button {
                                 onDelete(ing)
                             } label: {
                                 Image(systemName: "trash")
-                                    .foregroundColor(.red)
-                                    .padding(.trailing, 12)
+                                    .foregroundColor(themeManager.currentTheme.destructiveColor)
                             }
+                            .buttonStyle(.plain)
+                            .padding(.trailing, 12)
                         }
                     }
                     .padding(12)

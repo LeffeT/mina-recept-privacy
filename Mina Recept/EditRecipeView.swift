@@ -285,7 +285,7 @@ struct EditRecipeView: View {
             .padding(.vertical, 16)
         }
         
-        
+        .scrollIndicators(.hidden)
             
             
      

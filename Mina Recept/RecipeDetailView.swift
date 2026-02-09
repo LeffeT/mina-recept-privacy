@@ -78,17 +78,12 @@ struct RecipeDetailView: View {
                         
                         // Portionsrad
                         HStack {
-                            Text("\(L("servings", languageManager)): \(servings)")
+                            Text("\(L("portions", languageManager)): \(servings)")
                             Spacer()
                             Stepper("", value: $servings, in: 1...12)
                         }
                         .foregroundColor(themeManager.currentTheme.primaryTextColor)
-                        
-                        // Hjälptext
-                        //  Text("🔁 = ändras med portioner")
-                        //   .font(.caption)
-                        //   .foregroundStyle(Color.white)
-                        
+     
                         // Ingredienslista
                         VStack(alignment: .leading, spacing: 8) {
                             ForEach(recipe.ingredientArray, id: \.id) { ingredient in
@@ -138,12 +133,14 @@ struct RecipeDetailView: View {
                                 )
                         )
                     }
+                       
                 }
+               
                 .frame(maxWidth: readableContentWidth)
                 .padding(.horizontal, 16)
                 .padding(.bottom, 32)
             }
-            //}
+         .scrollIndicators(.hidden)
             // MARK: - Toolbar
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
@@ -180,6 +177,8 @@ struct RecipeDetailView: View {
                 Button(L("cancel", languageManager), role: .cancel) {}
             }
         }
+
+
         // MARK: - Sheets
         .sheet(item: $activeSheet) { sheet in
             switch sheet {

@@ -2,38 +2,41 @@
 //  PendingRecipePayloadStore.swift
 //  Mina Recept
 //
-//  Created by Leif Tarvainen on 2025-12-30.
+//  Created by Leif Tarvainen on 2026-02-04.
 //
 
-
-//
-//  PendingRecipePayloadStore.swift
-//  Mina Recept
-//
-//  Created by Leif Tarvainen on 2025-12-30.
-//
 
 import Foundation
 
 enum PendingRecipePayloadStore {
 
-    private static let key = "PendingRecipePayload"
+    private static let prefix = "PendingRecipePayload_"
 
-    // Spara payload lokalt (vid delning)
+    private static func key(for id: String) -> String {
+        "\(prefix)\(id)"
+    }
+
+    // MARK: - Save
+
     static func save(_ payload: PendingRecipePayload) {
         do {
             let data = try JSONEncoder().encode(payload)
-            UserDefaults.standard.set(data, forKey: key)
+            UserDefaults.standard.set(data, forKey: key(for: payload.id))
+        #if DEBUG
             print("📦 Pending payload saved:", payload.id)
+        #endif
         } catch {
-            print("❌ Failed to save pending payload:", error)
+        #if DEBUG
+            print("❌ Failed to save payload:", error)
+        #endif
         }
     }
 
-    // Ladda payload (vid import)
-    static func load() -> PendingRecipePayload? {
+    // MARK: - Load
+
+    static func load(id: String) -> PendingRecipePayload? {
         guard
-            let data = UserDefaults.standard.data(forKey: key),
+            let data = UserDefaults.standard.data(forKey: key(for: id)),
             let payload = try? JSONDecoder().decode(PendingRecipePayload.self, from: data)
         else {
             return nil
@@ -41,9 +44,18 @@ enum PendingRecipePayloadStore {
         return payload
     }
 
-    // Rensa efter lyckad import
-    static func clear() {
-        UserDefaults.standard.removeObject(forKey: key)
-        print("🧹 Pending payload cleared")
+    // MARK: - Exists
+
+    static func exists(id: String) -> Bool {
+        UserDefaults.standard.data(forKey: key(for: id)) != nil
+    }
+
+    // MARK: - Clear
+
+    static func clear(id: String) {
+        UserDefaults.standard.removeObject(forKey: key(for: id))
+    #if DEBUG
+        print("🧹 Pending payload cleared:", id)
+    #endif
     }
 }

@@ -21,17 +21,17 @@ struct RecipeImageView: View {
     let noImageText: String
 
     // Samma värden som EditRecipeView
-    private let formMaxWidth: CGFloat = 460
+    private let formMaxWidth: CGFloat = 700
 
     private var imageHeight: CGFloat {
-        UIDevice.current.userInterfaceIdiom == .pad ? 420 : 240
+        UIDevice.current.userInterfaceIdiom == .pad ? 520 : 340
     }
 
     var body: some View {
         GeometryReader { geo in
             let availableWidth = geo.size.width
             let imageWidth = min(
-                availableWidth - 32,
+                availableWidth - 2,
                 UIDevice.current.userInterfaceIdiom == .pad ? 700 : 520
             )
 
@@ -50,7 +50,7 @@ struct RecipeImageView: View {
                 } else {
                     VStack(spacing: 8) {
                         Image(systemName: "photo")
-                            .font(.system(size: 34))
+                            .font(.system(size: 32))
                         Text(noImageText)
                             .font(.caption)
                     }
@@ -60,6 +60,6 @@ struct RecipeImageView: View {
             .frame(maxWidth: .infinity)
         }
         .frame(height: imageHeight)
-        .padding(.horizontal, 16)
+        .padding(.horizontal, 2)
     }
 }

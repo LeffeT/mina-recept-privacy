@@ -103,7 +103,9 @@ struct EditRecipeIngredientsSection: View {
         do {
             try context.save()
         } catch {
+           #if DEBUG
             print("❌ Kunde inte ta bort ingrediens:", error)
+           #endif
         }
     }
 }
