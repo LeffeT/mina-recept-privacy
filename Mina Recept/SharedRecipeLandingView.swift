@@ -94,6 +94,14 @@ struct SharedRecipeLandingView: View {
                 isImporting = false
                 errorMessage = L("import_recipe_already_imported", languageManager)
 
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.8) {
+                    dismiss()
+                }
+            },
+
+            onMissingPayload: {
+                isImporting = false
+                errorMessage = L("import_recipe_missing_payload", languageManager)
 
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.8) {
                     dismiss()
@@ -102,3 +110,4 @@ struct SharedRecipeLandingView: View {
         )
     }
 }
+

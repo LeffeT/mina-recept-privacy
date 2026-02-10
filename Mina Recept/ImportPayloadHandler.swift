@@ -71,13 +71,13 @@ enum ImportPayloadHandler {
     static func importPendingRecipe(
         recipeID: String,
         onSuccess: @escaping () -> Void,
-        onAlreadyImported: @escaping () -> Void
+        onAlreadyImported: @escaping () -> Void,
+        onMissingPayload: @escaping () -> Void   // 👈 NY
     ) {
-        logger.info("➡️ Import start – recipeID: \(recipeID)")
-        // 🔒 Import-lås per recipeID
-        if inProgress.contains(recipeID) {
-            logger.info("⏳ Import already in progress – \(recipeID)")
+        logger.info("📥 Import start – recipeID: \(recipeID)")
 
+        guard !inProgress.contains(recipeID) else {
+            logger.info("⏳ Import already in progress – \(recipeID)")
             DispatchQueue.main.async {
                 onAlreadyImported()
             }
@@ -85,59 +85,58 @@ enum ImportPayloadHandler {
         }
 
         inProgress.insert(recipeID)
-
         let context = CoreDataStack.shared.viewContext
 
-        // 1 Finns receptet redan?
+        // 1️⃣ Finns receptet redan lokalt?
         if recipeExists(id: recipeID, context: context) {
             logger.info("⚠️ Recipe already imported – \(recipeID)")
-            inProgress.remove(recipeID)   // 👈 VIKTIG
+            inProgress.remove(recipeID)
             DispatchQueue.main.async {
                 onAlreadyImported()
             }
             return
         }
 
-
-        // 2 Finns payload lokalt?
+        // 2️⃣ Finns payload lokalt?
         if let payload = PendingRecipePayloadStore.load(id: recipeID) {
-            logger.info("📂 Payload hittad lokalt")
+            logger.info("📦 Payload hittad lokalt")
             importFromPayload(
                 payload,
                 recipeID: recipeID,
                 context: context,
                 onSuccess: {
-                    inProgress.remove(recipeID)   // 👈 VIKTIG RAD
+                    inProgress.remove(recipeID)
                     DispatchQueue.main.async {
                         onSuccess()
                     }
                 }
             )
             return
-
         }
 
-        // 3 iCloud fallback
+        // 3️⃣ Finns payload i iCloud?
         if let payload = iCloudPayloadStore.load(id: recipeID) {
             logger.info("☁️ Payload laddad från iCloud")
             importFromPayload(
                 payload,
                 recipeID: recipeID,
                 context: context,
-                onSuccess: onSuccess
+                onSuccess: {
+                    inProgress.remove(recipeID)
+                    DispatchQueue.main.async {
+                        onSuccess()
+                    }
+                }
             )
             return
         }
 
-       // logger.error("❌ No payload found for recipeID: \(recipeID)")
-        logger.info("ℹ️ No payload found – assuming recipe already imported: \(recipeID)")
+        // ❌ 4️⃣ Payload saknas = FEL, inte "redan importerat"
+        logger.error("❌ Payload saknas helt för recipeID: \(recipeID)")
         inProgress.remove(recipeID)
-
         DispatchQueue.main.async {
-            onAlreadyImported()
+            onMissingPayload()
         }
-        return
-
     }
 
     // MARK: - Helpers
