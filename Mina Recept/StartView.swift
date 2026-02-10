@@ -129,24 +129,28 @@ struct StartView: View {
                 // =========================
                 Spacer()
             }
-       // }
-    //}
-    .onAppear {
-        if !isICloudAvailable() {
-            showICloudAlert = true
-        }
-    }
-    .alert("iCloud behövs", isPresented: $showICloudAlert) {
-        Button("Öppna Inställningar") {
-            if let url = URL(string: UIApplication.openSettingsURLString) {
-                UIApplication.shared.open(url)
+            // }
+            //}
+            .onAppear {
+                if !isICloudAvailable() {
+                    showICloudAlert = true
+                }
+            }
+            .alert(
+                L("icloud_required_title", languageManager),
+                isPresented: $showICloudAlert
+            ) {
+                Button(L("open_settings", languageManager)) {
+                    if let url = URL(string: UIApplication.openSettingsURLString) {
+                        UIApplication.shared.open(url)
+                    }
+                }
+                
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(L("icloud_required_message", languageManager))
             }
         }
-        Button("OK", role: .cancel) {}
-    } message: {
-        Text("För att dela och importera recept behöver iCloud Drive vara aktiverat.")
-    }
-}
     
    
         // =========================

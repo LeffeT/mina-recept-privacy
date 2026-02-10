@@ -45,10 +45,14 @@ struct AddRecipeView: View {
     @State private var hasSubmitted = false
     @State private var basePortions: String = "4"
     @State private var ingredientUnit: String = ""
+  
+
     
     private let unitOptions = [
-        "pcs", "g", "kg", "ml", "dl", "l", "tsp", "tbsp", "krm", "pinch"
+    "pcs", "g", "kg", "ml", "dl", "l", "tsp", "tbsp", "krm", "pinch", "clove", "slice", "cl", "leaf", "package", "stalk", "can", "bunch"
     ]
+  
+
     private let appGroupID = "group.se.leiftarvainen.minarecept"
     
     // MARK: - Field styling
@@ -195,7 +199,8 @@ struct AddRecipeView: View {
                       text: $basePortions,
                       
             )
-            .keyboardType(.numberPad)
+            .keyboardType(.numbersAndPunctuation)
+
             //.tint(.white)
             .padding(12)
             .background(themeManager.currentTheme.buttonBackground)
@@ -220,7 +225,10 @@ struct AddRecipeView: View {
                text: $ingredientAmount
                 
             )
-            .keyboardType(.decimalPad)
+            //.keyboardType(.decimalPad)
+            .keyboardType(.numbersAndPunctuation)
+
+
             .modifier(fieldStyle)
             .foregroundStyle(themeManager.currentTheme.primaryTextColor)
             
@@ -269,10 +277,13 @@ struct AddRecipeView: View {
         
             var isValid: Bool {
                 !ingredientName.isEmpty &&
-                Double(ingredientAmount) != nil &&
-                !ingredientUnit.isEmpty
+                !ingredientUnit.isEmpty &&
+                IngredientFormatter.parseAmount(
+                    ingredientAmount,
+                    locale: languageManager.locale
+                ) != nil
             }
-            
+
             // ✅ BUTTON – EXACTLY HERE
             Button(action: {
                 hasSubmitted = true
@@ -348,26 +359,34 @@ struct AddRecipeView: View {
     }
 
             // MARK: - Actions
-            private func addIngredient() {
-                guard
-                    !ingredientName.isEmpty,
-                    let amount = Double(ingredientAmount)
-                else { return }
-                
-                tempIngredients.append(
-                    TempIngredient(
-                        name: ingredientName,
-                        amount: amount,
-                        unit: ingredientUnit,
-                        scalable: true,
-                        pluralName: nil
-                    )
-                )
-                
-                ingredientName = ""
-                ingredientAmount = ""
-                ingredientUnit = ""
-            }
+    private func addIngredient() {
+        guard
+            !ingredientName.isEmpty,
+            !ingredientUnit.isEmpty,
+            let value = IngredientFormatter.parseAmount(
+                ingredientAmount,
+                locale: languageManager.locale
+            )
+        else { return }
+
+        tempIngredients.append(
+            TempIngredient(
+                name: ingredientName,
+                amount: value,
+                unit: ingredientUnit,
+                scalable: true,
+                pluralName: nil
+            )
+        )
+
+        ingredientName = ""
+        ingredientAmount = ""
+        ingredientUnit = ""
+    }
+
+
+
+
             
             private func saveRecipe() {
                #if DEBUG

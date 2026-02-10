@@ -10,6 +10,15 @@ import Foundation
 
 struct IngredientFormatter {
 
+    static func parseAmount(_ text: String, locale: Locale) -> Double? {
+        let normalized = text
+            .trimmingCharacters(in: .whitespaces)
+            .replacingOccurrences(of: ",", with: ".")
+
+        return Double(normalized)
+    }
+
+
     // MARK: - Core Data ingredient (RecipeDetailView)
     static func formattedLine(
         ingredient: IngredientEntity,

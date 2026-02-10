@@ -58,6 +58,16 @@
 "unit.tbsp"  = "msk";
 "unit.krm"   = "krm";
 "unit.pinch" = "nypa";
+"unit.cl"        = "cl";        // centiliter
+"unit.slice"     = "skiva";     // bröd, ost, citron  // citron, äpple, potatis
+"unit.half"      = "halva";     // lök, citron
+"unit.can"       = "burk";      // tomater, kokosmjölk
+"unit.jar"       = "glas";      // pesto, sylt
+"unit.package"   = "förp";      // paket/förpackning
+"unit.bunch"     = "knippe";    // dill, persilja
+"unit.leaf"      = "blad";      // basilika, lagerblad
+"unit.clove"     = "klyfta";    // vitlök (viktigt!)
+"unit.stalk"     = "stjälk";    // selleri
 
 
 
@@ -65,4 +75,9 @@
 "import_recipe_question" = "Vill du importera detta recept till **Mina Recept**?";
 "import_recipe_already_imported" = "Receptet är redan importerat en gång!\nDela ett nytt recept.";
 "import" = "Importera";
+
+"icloud_required_title" = "iCloud krävs";
+"icloud_required_message" = "För att dela recept behöver iCloud Drive vara på
+och My Recipes Collection vara aktiverad i iCloud.";
+"icloud_open_settings" = "Visa appinställningar";
 

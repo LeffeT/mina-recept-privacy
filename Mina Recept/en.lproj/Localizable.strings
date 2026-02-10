@@ -58,6 +58,16 @@
 "unit.tbsp"  = "tbsp";
 "unit.krm"   = "krm";
 "unit.pinch" = "pinch";
+"unit.cl"       = "cl";        // centiliter (EU, används ibland)
+"unit.slice"    = "slice";     // bread, cheese, lemon
+"unit.half"     = "half";      // onion, lemon
+"unit.can"      = "can";       // tomatoes, coconut milk
+"unit.jar"      = "jar";       // pesto, jam
+"unit.package"  = "pack";      // package / pack
+"unit.bunch"    = "bunch";     // dill, parsley
+"unit.leaf"     = "leaf";      // basil, bay leaf
+"unit.clove"    = "clove";     // garlic (⚠️ viktigt!)
+"unit.stalk"    = "stalk";     // celery
 
 
 
@@ -67,3 +77,7 @@
 "import_recipe_already_imported" = "This recipe has already been imported once.\nShare a new recipe.";
 "import" = "Import";
 
+"icloud_required_title" = "iCloud required";
+"icloud_required_message" = "To share recipes, iCloud Drive must be enabled
+and My Recipes Collection turned on in iCloud.";
+"icloud_open_settings" = "Open app settings";

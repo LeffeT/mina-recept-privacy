@@ -42,14 +42,17 @@ struct EditRecipeView: View {
     //@State private var tempIngredients: [TempIngredient] = []
     @FetchRequest private var ingredients: FetchedResults<IngredientEntity>
     private let unitOptions = [
-        "pcs", "g", "kg", "ml", "dl", "l", "tsp", "tbsp", "krm", "pinch"
+        "pcs", "g", "kg", "ml", "dl", "l", "tsp", "tbsp", "krm", "pinch", "clove", "slice", "cl", "leaf", "package", "stalk", "can", "bunch"
     ]
     
     //Mark:
-    private var isValid: Bool {
+   var isValid: Bool {
         !ingredientName.isEmpty &&
-        Double(ingredientAmount) != nil &&
-        !ingredientUnit.isEmpty
+        !ingredientUnit.isEmpty &&
+        IngredientFormatter.parseAmount(
+            ingredientAmount,
+            locale: languageManager.locale
+        ) != nil
     }
     
     // MARK: - Layout (samma filosofi som DetailView)
@@ -378,33 +381,34 @@ struct EditRecipeView: View {
             .fill(themeManager.currentTheme.buttonBackground.opacity(0.45))
     }
     private func addIngredient() {
-           
         guard
-            let amount = Double(ingredientAmount),
             !ingredientName.isEmpty,
-            !ingredientUnit.isEmpty
-        else {
-        
-            return
-        }
-        
+            !ingredientUnit.isEmpty,
+            let value = IngredientFormatter.parseAmount(
+                ingredientAmount,
+                locale: languageManager.locale
+            )
+        else { return }
+
         let ing = IngredientEntity(context: context)
         ing.id = UUID()
         ing.name = ingredientName
-        ing.amount = amount
+        ing.amount = value
         ing.unit = ingredientUnit
         ing.scalable = true
         ing.recipe = recipe
         ing.createdAt = Date()
-        
+
         try? context.save()
-    
-        // reset inputs
+
         ingredientName = ""
         ingredientAmount = ""
         ingredientUnit = ""
         hasSubmitted = false
     }
+
+
+
 
     private func deleteIngredient(_ ingredient: IngredientEntity) {
         context.delete(ingredient)
@@ -486,7 +490,9 @@ struct IngredientFormSection: View {
                 .tint(.white)
             TextField(L("amount", languageManager),text: $ingredientAmount
             )
-            .keyboardType(.decimalPad)
+            //.keyboardType(.decimalPad)
+            .keyboardType(.numbersAndPunctuation)
+
             .modifier(fieldStyle)
             
             

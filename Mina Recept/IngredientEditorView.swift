@@ -14,6 +14,7 @@ struct IngredientEditorView: View {
     @ObservedObject var recipe: Recipe
     @Environment(\.managedObjectContext) private var context
     @EnvironmentObject var themeManager: ThemeManager
+    @EnvironmentObject private var languageManager: LanguageManager
     
     @State private var name = ""
     @State private var amount = ""
@@ -43,7 +44,10 @@ struct IngredientEditorView: View {
                     .textFieldStyle(.roundedBorder)
 
                 TextField("Mängd (per 1 portion)", text: $amount)
-                    .keyboardType(.decimalPad)
+                   // .keyboardType(.decimalPad)
+                    .keyboardType(.numbersAndPunctuation)
+
+
                     .textFieldStyle(.roundedBorder)
 
                 TextField("Enhet (t.ex. dl, g, kg)", text: $unit)
@@ -59,24 +63,31 @@ struct IngredientEditorView: View {
         .navigationTitle("Ingredienser")
     }
 
+
     // MARK: - Actions
 
     private func addIngredient() {
-        // ⛔ Stoppa skapande om receptet inte är sparat ännu
-            guard !recipe.objectID.isTemporaryID else {
-                return
-            }
+        guard
+            !name.isEmpty,
+            !unit.isEmpty,
+            let value = IngredientFormatter.parseAmount(
+                        amount,
+                        locale: languageManager.locale
+                        )
+            
+            
+        else {
+            return
+        }
 
-            guard let value = Double(amount.replacingOccurrences(of: ",", with: ".")) else {
-                return
-            }
+
+
         let ingredient = IngredientEntity(context: context)
-       
         ingredient.name = name
         ingredient.amount = value
         ingredient.unit = unit
-        ingredient.scalable = true          // 🔑 KRITISKT
-        ingredient.recipe = recipe          // 🔑 KRITISKT
+        ingredient.scalable = true
+        ingredient.recipe = recipe
 
         try? context.save()
 
@@ -84,6 +95,7 @@ struct IngredientEditorView: View {
         amount = ""
         unit = ""
     }
+
 
     private func deleteIngredient(at offsets: IndexSet) {
         for index in offsets {
