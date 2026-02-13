@@ -22,12 +22,13 @@ struct MatlagningApp: App {
     
     
     init() {
-        if let url = FileManager.default.url(forUbiquityContainerIdentifier: nil) {
+        if let url = FileManager.default.url(forUbiquityContainerIdentifier: "iCloud.se.leiftarvainen.minarecept") {
             print("✅ iCloud container:", url)
         } else {
             print("❌ iCloud container NOT available")
         }
     }
+
  
     @State private var presentedRecipeID: String?
 
@@ -66,6 +67,7 @@ struct MatlagningApp: App {
                 #if DEBUG
                 print("📬 onOpenURL triggered")
                 print("➡️ URL received:", url.absoluteString)
+                print("Incoming URL:", url)
                 #endif
                 deepLinkManager.handle(url)
             }

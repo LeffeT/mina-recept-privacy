@@ -132,6 +132,7 @@ struct StartView: View {
             // }
             //}
             .onAppear {
+                print("Identity token:", FileManager.default.ubiquityIdentityToken as Any)
                 if !isICloudAvailable() {
                     showICloudAlert = true
                 }

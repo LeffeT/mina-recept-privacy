@@ -9,14 +9,12 @@
 import CoreData
 
 struct PersistenceController {
-
     static let shared = PersistenceController()
 
-    let container: NSPersistentContainer
+    let container: NSPersistentCloudKitContainer
 
     init(inMemory: Bool = false) {
-
-        container = NSPersistentContainer(name: "Matlagning")
+        container = NSPersistentCloudKitContainer(name: "Matlagning")
 
         if inMemory {
             container.persistentStoreDescriptions.first?.url =
@@ -25,7 +23,7 @@ struct PersistenceController {
 
         container.loadPersistentStores { _, error in
             if let error = error as NSError? {
-                fatalError("Unresolved Core Data error: \(error)")
+                fatalError("Core Data error: \(error), \(error.userInfo)")
             }
         }
 
@@ -34,3 +32,4 @@ struct PersistenceController {
             NSMergeByPropertyObjectTrumpMergePolicy
     }
 }
+

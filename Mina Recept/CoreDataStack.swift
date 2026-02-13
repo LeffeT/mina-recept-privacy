@@ -12,24 +12,22 @@ final class CoreDataStack {
 
     static let shared = CoreDataStack()
 
-    let container: NSPersistentContainer
+    let container: NSPersistentCloudKitContainer
 
     var viewContext: NSManagedObjectContext {
         container.viewContext
     }
 
     private init() {
-        let modelURL = Bundle.main.url(
-            forResource: "Matlagning",
-            withExtension: "momd"
-        )!
 
-        let model = NSManagedObjectModel(contentsOf: modelURL)!
+        container = NSPersistentCloudKitContainer(name: "Matlagning")
 
-        container = NSPersistentContainer(
-            name: "Matlagning",
-            managedObjectModel: model
-        )
+        // CloudKit-koppling
+        let storeDescription = container.persistentStoreDescriptions.first
+        storeDescription?.cloudKitContainerOptions =
+            NSPersistentCloudKitContainerOptions(
+                containerIdentifier: "iCloud.se.leiftarvainen.minarecept"
+            )
 
         container.loadPersistentStores { _, error in
             if let error = error {

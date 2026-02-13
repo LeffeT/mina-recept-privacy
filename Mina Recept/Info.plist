@@ -49,19 +49,30 @@
 			</array>
 			<key>Description</key>
 			<string>Mina Recept File</string>
-			<key>Filename Extensins</key>
-			<array>
-				<string>minarecept</string>
-			</array>
 			<key>Identifier</key>
 			<string>com.se.leiftarvainen.minarecept
 </string>
+			<key>Tag Specification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>minarecept</string>
+				</array>
+				<key>public.mime-type</key>
+				<string>application/x-minarecept</string>
+			</dict>
 		</dict>
 	</array>
+	<key>LSSupportsOpeningDocumentsInPlace</key>
+	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>Appen behöver kameran för att ta bilder till recept</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Appen behöver åtkomst till bilder för att lägga till receptbilder</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
 	<key>UILaunchScreen</key>
 	<dict>
 		<key>UIImageName</key>
@@ -74,7 +85,5 @@
 		<string>UIInterfaceOrientationPortrait</string>
 		<string>UIInterfaceOrientationPortraitUpsideDown</string>
 	</array>
-	<key>LSSupportsOpeningDocumentsInPlace</key>
-	<true/>
 </dict>
 </plist>

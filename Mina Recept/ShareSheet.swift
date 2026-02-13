@@ -15,6 +15,8 @@
 
 import SwiftUI
 import UIKit
+import CloudKit
+
 
 struct ShareSheet: UIViewControllerRepresentable {
     @EnvironmentObject var languageManager: LanguageManager
@@ -48,7 +50,8 @@ struct ShareSheet: UIViewControllerRepresentable {
         }
 
         // 🔗 Deep link (använder ID direkt)
-        let linkString = "minarecept://import?id=\(id)"
+        let linkURL = URL(string: "minarecept://import?id=\(id)")!
+
 
         let header = String(
             format: L("share_recipe_title", languageManager),
@@ -61,13 +64,23 @@ struct ShareSheet: UIViewControllerRepresentable {
         \(header)
 
         \(openText)
-        \(linkString)
+        \(linkURL)
         """
 
+        var items: [Any] = []
+
+        if let image = image {
+            items.append(image)
+        }
+
+        items.append(text)
+        items.append(linkURL) 
+
         let controller = UIActivityViewController(
-            activityItems: [text],
+            activityItems: items,
             applicationActivities: nil
         )
+
 
         // ✅ ENDA platsen där payload sparas
         controller.completionWithItemsHandler = { _, completed, _, _ in
@@ -90,7 +103,11 @@ struct ShareSheet: UIViewControllerRepresentable {
             print("✅ Share confirmed – saving payload:", payload.id)
            #endif
             
-            PendingRecipePayloadStore.save(payload)
+            //PendingRecipePayloadStore.save(payload)
+            CloudKitService.shared.savePublicRecipe(payload)
+
+         
+
         }
 
         return controller

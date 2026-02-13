@@ -13,72 +13,65 @@
 
 import UIKit
 
+
 enum FileHelper {
 
-    // MARK: - App Group ID (MÅSTE matcha Share Extension)
-    private static let appGroupID = "group.se.leiftarvainen.minarecept"
-
-    // MARK: - Base directory (App Group container)
-    private static var baseDirectory: URL {
-        guard let url = FileManager.default
-            .containerURL(forSecurityApplicationGroupIdentifier: appGroupID) else {
-            fatalError("❌ Kunde inte hitta App Group container")
-        }
-        return url
+    private static var iCloudDirectory: URL? {
+        FileManager.default
+            .url(forUbiquityContainerIdentifier: nil)?
+            .appendingPathComponent("Documents")
     }
 
-    static func fileURL(for filename: String) -> URL {
-        baseDirectory.appendingPathComponent(filename)
-    }
 
     // MARK: - Save image
+
     static func saveImageData(filename: String, data: Data) {
-        let url = fileURL(for: filename)
+
+        guard let dir = iCloudDirectory else {
+            print("❌ iCloud container saknas")
+            return
+        }
+
         do {
-            try data.write(to: url, options: [.atomic])
-           #if DEBUG
-            print("✅ Bild sparad i App Group:", url.lastPathComponent)
-           #endif
+            try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+
+            let url = dir.appendingPathComponent(filename)
+            try data.write(to: url, options: .atomic)
+
+            print("☁️ Sparad i iCloud:", url)
+
         } catch {
-           #if DEBUG
-            print("❌ Kunde inte spara bild:", error)
-           #endif
+            print("❌ Kunde inte spara i iCloud:", error)
         }
     }
 
     // MARK: - Load image
+
     static func loadImage(filename: String) -> UIImage? {
-        let url = fileURL(for: filename)
-        guard
-            let data = try? Data(contentsOf: url),
-            let image = UIImage(data: data)
-        else {
-           #if DEBUG
-            print("⚠️ Kunde inte läsa bild:", filename)
-           #endif
+
+        guard let dir = iCloudDirectory else {
+            print("❌ iCloud container saknas vid läsning")
             return nil
         }
-        return image
-    }
 
-    // MARK: - Image URL (för delning / preview)
-    static func imageURL(filename: String) -> URL? {
-        let url = fileURL(for: filename)
-        return FileManager.default.fileExists(atPath: url.path) ? url : nil
-    }
+        let url = dir.appendingPathComponent(filename)
 
-    // MARK: - Delete image
-    static func deleteImage(filename: String) {
-        let url = fileURL(for: filename)
-        do {
-            try FileManager.default.removeItem(at: url)
-            #if DEBUG
-            print("🗑️ Bild borttagen:", url.lastPathComponent)
-            #endif
-        } catch {
-            #if DEBUG
-            print("⚠️ Kunde inte ta bort bild:", error)
-            #endif
+        if FileManager.default.fileExists(atPath: url.path) {
+            return UIImage(contentsOfFile: url.path)
         }
+
+        print("❌ Kunde inte läsa bild:", filename)
+        return nil
+    }
+
+    // MARK: - Delete
+
+    static func deleteImage(filename: String) {
+
+        guard let dir = iCloudDirectory else { return }
+
+        let url = dir.appendingPathComponent(filename)
+
+        try? FileManager.default.removeItem(at: url)
     }
 }

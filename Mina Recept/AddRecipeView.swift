@@ -35,6 +35,7 @@ struct AddRecipeView: View {
     @State private var pickedImage: UIImage?
     @State private var showCamera = false
     @State private var showPhotoLibrary = false
+
     
     // Ingredients (TEMP)
     @State private var showUnitPicker = false
@@ -385,9 +386,7 @@ struct AddRecipeView: View {
     }
 
 
-
-
-            
+            //Spara recept
             private func saveRecipe() {
                #if DEBUG
                 print("💾 saveRecipe called")
@@ -413,15 +412,19 @@ struct AddRecipeView: View {
                     ing.recipe = new
                     
                 }
-                
+                //external_storage
                 if let img = pickedImage {
                     let resized = img.normalizedAndResized(maxWidth: 1200, maxHeight: 800)
                     if let data = resized.jpegData(compressionQuality: 0.85) {
+
                         let filename = UUID().uuidString + ".jpg"
                         FileHelper.saveImageData(filename: filename, data: data)
+
                         new.imageFilename = filename
                     }
                 }
+
+
                 
                 do {
                     try context.save()
