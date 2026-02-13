@@ -22,6 +22,11 @@ enum FileHelper {
             .appendingPathComponent("Documents")
     }
 
+    static func imageURL(filename: String) -> URL? {
+        guard let dir = iCloudDirectory else { return nil }
+        return dir.appendingPathComponent(filename)
+    }
+
 
     // MARK: - Save image
 

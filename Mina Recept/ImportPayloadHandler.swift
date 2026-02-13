@@ -131,11 +131,31 @@ enum ImportPayloadHandler {
             return
         }
 
-        // ❌ 4️⃣ Payload saknas = FEL, inte "redan importerat"
-        logger.error("❌ Payload saknas helt för recipeID: \(recipeID)")
-        inProgress.remove(recipeID)
-        DispatchQueue.main.async {
-            onMissingPayload()
+        // 4️⃣ Finns payload i CloudKit?
+        CloudKitService.shared.fetchPublicRecipe(id: recipeID) { payload in
+            DispatchQueue.main.async {
+                if let payload {
+                    self.logger.info("☁️ Payload laddad från CloudKit")
+                    importFromPayload(
+                        payload,
+                        recipeID: recipeID,
+                        context: context,
+                        onSuccess: {
+                            inProgress.remove(recipeID)
+                            DispatchQueue.main.async {
+                                onSuccess()
+                            }
+                        }
+                    )
+                } else {
+                    // ❌ 5️⃣ Payload saknas = FEL, inte "redan importerat"
+                    self.logger.error("❌ Payload saknas helt för recipeID: \(recipeID)")
+                    inProgress.remove(recipeID)
+                    DispatchQueue.main.async {
+                        onMissingPayload()
+                    }
+                }
+            }
         }
     }
 
