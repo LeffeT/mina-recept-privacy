@@ -14,6 +14,7 @@ struct StartView: View {
 
     @EnvironmentObject var themeManager: ThemeManager
     @EnvironmentObject var languageManager: LanguageManager
+    @EnvironmentObject var cloudSyncStatus: CloudSyncStatus
 
 
     @State private var goToHome = false
@@ -24,6 +25,47 @@ struct StartView: View {
     
     private func isICloudAvailable() -> Bool {
         FileManager.default.ubiquityIdentityToken != nil
+    }
+
+    private var iCloudStatusText: String {
+        switch cloudSyncStatus.state {
+        case .syncing:
+            return L("icloud_status_syncing", languageManager)
+        case .error:
+            return L("icloud_status_error", languageManager)
+        case .unavailable:
+            return L("icloud_status_off", languageManager)
+        case .idle:
+            if cloudSyncStatus.lastSyncDate == nil {
+                return L("icloud_status_starting", languageManager)
+            }
+            return L("icloud_status_active", languageManager)
+        }
+    }
+
+    private var iCloudStatusColor: Color {
+        switch cloudSyncStatus.state {
+        case .syncing:
+            return themeManager.currentTheme.accentColor
+        case .error:
+            return .orange
+        case .unavailable:
+            return .red
+        case .idle:
+            return cloudSyncStatus.lastSyncDate == nil
+                ? themeManager.currentTheme.accentColor
+                : .green
+        }
+    }
+
+    private var lastSyncText: String? {
+        guard let date = cloudSyncStatus.lastSyncDate else { return nil }
+        let formatter = DateFormatter()
+        formatter.locale = languageManager.locale
+        formatter.timeStyle = .short
+        formatter.dateStyle = .none
+        let time = formatter.string(from: date)
+        return String(format: L("icloud_last_sync", languageManager), time)
     }
 
 
@@ -113,6 +155,30 @@ struct StartView: View {
                     .padding(.top, 14)
                 }
                 .buttonStyle(.plain)
+
+                // =========================
+                // ICLOUD STATUS
+                // =========================
+                HStack(spacing: 8) {
+                    Circle()
+                        .fill(iCloudStatusColor)
+                        .frame(width: 8, height: 8)
+                    Text(iCloudStatusText)
+                        .font(.footnote)
+                        .foregroundColor(
+                            themeManager.currentTheme.primaryTextColor.opacity(0.7)
+                        )
+                }
+                .padding(.top, 12)
+
+                if let lastSyncText {
+                    Text(lastSyncText)
+                        .font(.caption)
+                        .foregroundColor(
+                            themeManager.currentTheme.primaryTextColor.opacity(0.55)
+                        )
+                        .padding(.top, 2)
+                }
                 
                 // =========================
                 // BILD UNDER INSTÄLLNINGAR
@@ -136,6 +202,7 @@ struct StartView: View {
                 if !isICloudAvailable() {
                     showICloudAlert = true
                 }
+                cloudSyncStatus.refresh()
             }
             .alert(
                 L("icloud_required_title", languageManager),

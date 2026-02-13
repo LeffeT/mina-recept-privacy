@@ -76,6 +76,12 @@
 "import_recipe_already_imported" = "Receptet är redan importerat en gång!\nDela ett nytt recept.";
 "import" = "Importera";
 "import_recipe_expired" = "Länken har gått ut.\nDela ett nytt recept.";
+"icloud_status_active" = "iCloud: aktiv";
+"icloud_status_syncing" = "iCloud: synkar…";
+"icloud_status_off" = "iCloud: av";
+"icloud_status_error" = "iCloud: fel";
+"icloud_status_starting" = "iCloud: startar…";
+"icloud_last_sync" = "Senast synkat: %@";
 
 "icloud_required_title" = "iCloud krävs";
 "icloud_required_message" = "För att dela recept behöver iCloud Drive vara på

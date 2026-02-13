@@ -77,6 +77,12 @@
 "import_recipe_already_imported" = "This recipe has already been imported once.\nShare a new recipe.";
 "import" = "Import";
 "import_recipe_expired" = "This link has expired.\nShare a new recipe.";
+"icloud_status_active" = "iCloud: Active";
+"icloud_status_syncing" = "iCloud: Syncing…";
+"icloud_status_off" = "iCloud: Off";
+"icloud_status_error" = "iCloud: Error";
+"icloud_status_starting" = "iCloud: Starting…";
+"icloud_last_sync" = "Last synced: %@";
 
 "icloud_required_title" = "iCloud required";
 "icloud_required_message" = "To share recipes, iCloud Drive must be enabled
