@@ -27,6 +27,8 @@ struct MatlagningApp: App {
         } else {
             print("❌ iCloud container NOT available")
         }
+
+        CloudKitService.shared.cleanupExpiredSharesForCurrentUser()
     }
 
  

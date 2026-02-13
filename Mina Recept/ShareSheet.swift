@@ -74,7 +74,7 @@ struct ShareSheet: UIViewControllerRepresentable {
         }
 
         items.append(text)
-        items.append(linkURL) 
+        // Link already included in text; avoid duplicating it as a separate item.
 
         let controller = UIActivityViewController(
             activityItems: items,
@@ -92,12 +92,14 @@ struct ShareSheet: UIViewControllerRepresentable {
                 return
             }
 
+            let expiresAt = Date().addingTimeInterval(CloudKitService.shareTTL)
             let payload = PendingRecipePayload(
                 id: id,
                 title: title,
                 instructions: instructions,
                 imageFilename: imageFilename,
-                ingredients: ingredients
+                ingredients: ingredients,
+                expiresAt: expiresAt
             )
           #if DEBUG
             print("✅ Share confirmed – saving payload:", payload.id)

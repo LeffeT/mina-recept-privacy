@@ -106,8 +106,16 @@ struct SharedRecipeLandingView: View {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.8) {
                     dismiss()
                 }
+            },
+
+            onExpired: {
+                isImporting = false
+                errorMessage = L("import_recipe_expired", languageManager)
+
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.8) {
+                    dismiss()
+                }
             }
         )
     }
 }
-

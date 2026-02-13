@@ -56,6 +56,7 @@ enum ImportPayloadHandler {
             // Rensa payload (både lokalt + iCloud)
             PendingRecipePayloadStore.clear(id: recipeID)
             iCloudPayloadStore.clear(id: recipeID)
+            CloudKitService.shared.deletePublicRecipe(id: recipeID)
 
             DispatchQueue.main.async {
                 onSuccess()
@@ -72,7 +73,8 @@ enum ImportPayloadHandler {
         recipeID: String,
         onSuccess: @escaping () -> Void,
         onAlreadyImported: @escaping () -> Void,
-        onMissingPayload: @escaping () -> Void   // 👈 NY
+        onMissingPayload: @escaping () -> Void,
+        onExpired: @escaping () -> Void
     ) {
         logger.info("📥 Import start – recipeID: \(recipeID)")
 
@@ -132,9 +134,10 @@ enum ImportPayloadHandler {
         }
 
         // 4️⃣ Finns payload i CloudKit?
-        CloudKitService.shared.fetchPublicRecipe(id: recipeID) { payload in
+        CloudKitService.shared.fetchPublicRecipe(id: recipeID) { result in
             DispatchQueue.main.async {
-                if let payload {
+                switch result {
+                case .success(let payload):
                     self.logger.info("☁️ Payload laddad från CloudKit")
                     importFromPayload(
                         payload,
@@ -147,7 +150,13 @@ enum ImportPayloadHandler {
                             }
                         }
                     )
-                } else {
+                case .expired:
+                    self.logger.error("⏰ Payload expired for recipeID: \(recipeID)")
+                    inProgress.remove(recipeID)
+                    DispatchQueue.main.async {
+                        onExpired()
+                    }
+                case .notFound, .failure:
                     // ❌ 5️⃣ Payload saknas = FEL, inte "redan importerat"
                     self.logger.error("❌ Payload saknas helt för recipeID: \(recipeID)")
                     inProgress.remove(recipeID)

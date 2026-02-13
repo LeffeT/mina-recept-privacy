@@ -32,4 +32,20 @@ struct PendingRecipePayload: Codable {
     let imageFilename: String?
     
     let ingredients: [PendingIngredient]
+
+    /// Delningslänkens utgångstid
+    let expiresAt: Date?
+}
+
+extension PendingRecipePayload {
+    func withExpiresAt(_ date: Date?) -> PendingRecipePayload {
+        PendingRecipePayload(
+            id: id,
+            title: title,
+            instructions: instructions,
+            imageFilename: imageFilename,
+            ingredients: ingredients,
+            expiresAt: date
+        )
+    }
 }
