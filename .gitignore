@@ -22,6 +22,9 @@ xcuserdata/
 *.dSYM.zip
 *.dSYM.out
 *.xcuserstate
+*.xcresult
+*.xccovreport
+*.xccovarchive
 
 # Xcode workspace user data
 project.xcworkspace/xcuserdata/
