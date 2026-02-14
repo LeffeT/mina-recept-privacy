@@ -12,6 +12,7 @@
 //
 
 import UIKit
+import os
 
 
 enum FileHelper {
@@ -35,7 +36,7 @@ enum FileHelper {
     static func saveImageData(filename: String, data: Data) {
 
         guard let dir = iCloudDirectory else {
-            print("❌ iCloud container saknas")
+            AppLog.storage.error("iCloud container saknas")
             return
         }
 
@@ -48,10 +49,10 @@ enum FileHelper {
                 imageCache.setObject(image, forKey: filename as NSString)
             }
 
-            print("☁️ Sparad i iCloud:", url)
+            AppLog.storage.debug("Sparad i iCloud: \(url.path, privacy: .private)")
 
         } catch {
-            print("❌ Kunde inte spara i iCloud:", error)
+            AppLog.storage.error("Kunde inte spara i iCloud: \(error.localizedDescription, privacy: .public)")
         }
     }
 
@@ -63,7 +64,7 @@ enum FileHelper {
         }
 
         guard let dir = iCloudDirectory else {
-            print("❌ iCloud container saknas vid läsning")
+            AppLog.storage.error("iCloud container saknas vid läsning")
             return nil
         }
 
@@ -75,7 +76,7 @@ enum FileHelper {
             return image
         }
 
-        print("❌ Kunde inte läsa bild:", filename)
+        AppLog.storage.debug("Kunde inte läsa bild: \(filename, privacy: .public)")
         return nil
     }
 

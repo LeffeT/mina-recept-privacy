@@ -7,6 +7,7 @@
 
 
 import Foundation
+import os
 
 enum PendingRecipePayloadStore {
 
@@ -24,11 +25,11 @@ enum PendingRecipePayloadStore {
             let data = try JSONEncoder().encode(payload)
             UserDefaults.standard.set(data, forKey: key(for: payload.id))
         #if DEBUG
-            print("📦 Pending payload saved:", payload.id)
+            AppLog.storage.debug("Pending payload saved: \(payload.id, privacy: .public)")
         #endif
         } catch {
         #if DEBUG
-            print("❌ Failed to save payload:", error)
+            AppLog.storage.error("Failed to save payload: \(error.localizedDescription, privacy: .public)")
         #endif
         }
     }
@@ -56,7 +57,7 @@ enum PendingRecipePayloadStore {
     static func clear(id: String) {
         UserDefaults.standard.removeObject(forKey: key(for: id))
     #if DEBUG
-        print("🧹 Pending payload cleared:", id)
+        AppLog.storage.debug("Pending payload cleared: \(id, privacy: .public)")
     #endif
     }
 }

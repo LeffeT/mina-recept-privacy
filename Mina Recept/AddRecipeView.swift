@@ -11,6 +11,7 @@
 import SwiftUI
 import CoreData
 import UIKit
+import os
 
 struct AddRecipeView: View {
     
@@ -389,7 +390,7 @@ struct AddRecipeView: View {
             //Spara recept
             private func saveRecipe() {
                #if DEBUG
-                print("💾 saveRecipe called")
+                AppLog.storage.debug("saveRecipe called")
                #endif
                 let new = Recipe(context: context)
                 new.id = UUID()
@@ -431,7 +432,7 @@ struct AddRecipeView: View {
                     dismiss()
                 } catch {
                    #if DEBUG
-                    print("❌ Kunde inte spara:", error)
+                    AppLog.storage.error("Kunde inte spara: \(error.localizedDescription, privacy: .public)")
                    #endif
                 }
             }

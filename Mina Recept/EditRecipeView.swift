@@ -13,6 +13,7 @@
 import SwiftUI
 import CoreData
 import PhotosUI
+import os
 
 struct EditRecipeView: View {
     
@@ -438,7 +439,7 @@ struct EditRecipeView: View {
             try context.save()
             dismiss()
         } catch {
-            print("❌ Kunde inte spara:", error)
+            AppLog.storage.error("Kunde inte spara: \(error.localizedDescription, privacy: .public)")
         }
         
     }
@@ -619,4 +620,3 @@ struct IngredientFormSection: View {
                 }
             }
         }
-

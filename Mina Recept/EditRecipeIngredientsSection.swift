@@ -18,6 +18,7 @@
 
 import SwiftUI
 import CoreData
+import os
 
 // MARK: - Ingredients Section (kan användas inne i befintlig EditRecipeView)
 
@@ -104,9 +105,8 @@ struct EditRecipeIngredientsSection: View {
             try context.save()
         } catch {
            #if DEBUG
-            print("❌ Kunde inte ta bort ingrediens:", error)
+            AppLog.storage.error("Could not delete ingredient: \(error.localizedDescription, privacy: .public)")
            #endif
         }
     }
 }
-

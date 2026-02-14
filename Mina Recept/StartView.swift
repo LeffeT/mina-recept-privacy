@@ -7,6 +7,7 @@
 
 
 import SwiftUI
+import os
 
 struct StartView: View {
  
@@ -198,7 +199,11 @@ struct StartView: View {
             // }
             //}
             .onAppear {
-                print("Identity token:", FileManager.default.ubiquityIdentityToken as Any)
+                #if DEBUG
+                AppLog.cloudkit.debug(
+                    "Identity token: \(String(describing: FileManager.default.ubiquityIdentityToken), privacy: .private)"
+                )
+                #endif
                 if !isICloudAvailable() {
                     showICloudAlert = true
                 }

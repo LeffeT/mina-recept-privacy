@@ -37,3 +37,4 @@
 - Import visar kort “Receptet importerades”‑bekräftelse.
 - iCloud‑payload logg tystas när fil saknas (normalt vid CloudKit‑import).
 - Portions‑stepper ersatt med egen plus/minus‑kontroll (ingen svart kant i vitt tema).
+- Bytte `print` mot `os.Logger` via `AppLog` för filtrerbara loggar i Console.

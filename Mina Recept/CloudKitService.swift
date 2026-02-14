@@ -8,6 +8,7 @@
 
 import CloudKit
 import UIKit
+import os
 
 final class CloudKitService {
     
@@ -53,7 +54,7 @@ final class CloudKitService {
                 if let ckError = error as? CKError, ckError.code == .unknownItem {
                     completion(.notFound)
                 } else {
-                    print("❌ CloudKit fetch error:", error)
+                    AppLog.cloudkit.error("Fetch error: \(error.localizedDescription, privacy: .public)")
                     completion(.failure(error))
                 }
                 return
@@ -129,9 +130,9 @@ final class CloudKitService {
 
         database.delete(withRecordID: recordID) { _, error in
             if let error {
-                print("❌ CloudKit delete error:", error)
+                AppLog.cloudkit.error("Delete error: \(error.localizedDescription, privacy: .public)")
             } else {
-                print("🗑 Deleted CloudKit record:", id)
+                AppLog.cloudkit.info("Deleted CloudKit record: \(id, privacy: .public)")
             }
         }
     }
@@ -169,12 +170,12 @@ final class CloudKitService {
                     deleteOperation.savePolicy = .ifServerRecordUnchanged
                     deleteOperation.modifyRecordsResultBlock = { result in
                         if case .failure(let error) = result {
-                            print("❌ CloudKit cleanup delete error:", error)
+                            AppLog.cloudkit.error("Cleanup delete error: \(error.localizedDescription, privacy: .public)")
                         }
                     }
                     database.add(deleteOperation)
                 case .failure(let error):
-                    print("❌ CloudKit cleanup query error:", error)
+                    AppLog.cloudkit.error("Cleanup query error: \(error.localizedDescription, privacy: .public)")
                 }
             }
 
@@ -192,7 +193,7 @@ final class CloudKitService {
 
         container.fetchUserRecordID { recordID, error in
             if let error {
-                print("❌ CloudKit user record fetch error:", error)
+                AppLog.cloudkit.error("User record fetch error: \(error.localizedDescription, privacy: .public)")
             }
             if let recordID {
                 let recordName = recordID.recordName
@@ -234,7 +235,7 @@ final class CloudKitService {
         if let filename = payload.imageFilename,
            let fileURL = FileHelper.imageURL(filename: filename) {
             guard FileManager.default.fileExists(atPath: fileURL.path) else {
-                print("Image file missing at:", fileURL.path)
+                AppLog.cloudkit.error("Image file missing at: \(fileURL.path, privacy: .public)")
                 return
             }
             record["image"] = CKAsset(fileURL: fileURL)
@@ -242,9 +243,9 @@ final class CloudKitService {
 
         database.save(record) { _, error in
             if let error {
-                print("❌ CloudKit save error:", error)
+                AppLog.cloudkit.error("Save error: \(error.localizedDescription, privacy: .public)")
             } else {
-                print("✅ Saved to public CloudKit")
+                AppLog.cloudkit.info("Saved to public CloudKit")
             }
         }
     }

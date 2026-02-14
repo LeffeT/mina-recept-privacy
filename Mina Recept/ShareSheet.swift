@@ -16,6 +16,7 @@
 import SwiftUI
 import UIKit
 import CloudKit
+import os
 
 
 struct ShareSheet: UIViewControllerRepresentable {
@@ -28,8 +29,8 @@ struct ShareSheet: UIViewControllerRepresentable {
 
     func makeUIViewController(context: Context) -> UIActivityViewController {
     #if DEBUG
-        print("INGREDIENTS COUNT =", ingredients.count)
-        print("🟡 ShareSheet opened")
+        AppLog.share.debug("Ingredients count: \(self.ingredients.count, privacy: .public)")
+        AppLog.share.debug("ShareSheet opened")
     #endif
 
         // 🔑 Ett ID per share-session
@@ -86,7 +87,7 @@ struct ShareSheet: UIViewControllerRepresentable {
         controller.completionWithItemsHandler = { _, completed, _, _ in
             guard completed else {
             #if DEBUG
-                print("❎ Share cancelled – no payload saved")
+                AppLog.share.debug("Share cancelled – no payload saved")
             #endif
 
                 return
@@ -102,7 +103,7 @@ struct ShareSheet: UIViewControllerRepresentable {
                 expiresAt: expiresAt
             )
           #if DEBUG
-            print("✅ Share confirmed – saving payload:", payload.id)
+            AppLog.share.info("Share confirmed – saving payload: \(payload.id, privacy: .public)")
            #endif
             
             //PendingRecipePayloadStore.save(payload)

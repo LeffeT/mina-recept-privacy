@@ -15,6 +15,7 @@
 
 import SwiftUI
 import CoreData
+import os
 
 @main
 struct MatlagningApp: App {
@@ -23,9 +24,9 @@ struct MatlagningApp: App {
     
     init() {
         if let url = FileManager.default.url(forUbiquityContainerIdentifier: "iCloud.se.leiftarvainen.minarecept") {
-            print("✅ iCloud container:", url)
+            AppLog.cloudkit.info("iCloud container: \(url.path, privacy: .private)")
         } else {
-            print("❌ iCloud container NOT available")
+            AppLog.cloudkit.error("iCloud container not available")
         }
 
         CloudKitService.shared.cleanupExpiredSharesForCurrentUser()
@@ -69,9 +70,9 @@ struct MatlagningApp: App {
             // 📬 Tar emot deep links
             .onOpenURL { url in
                 #if DEBUG
-                print("📬 onOpenURL triggered")
-                print("➡️ URL received:", url.absoluteString)
-                print("Incoming URL:", url)
+                AppLog.share.debug("onOpenURL triggered")
+                AppLog.share.debug("URL received: \(url.absoluteString, privacy: .private)")
+                AppLog.share.debug("Incoming URL: \(String(describing: url), privacy: .private)")
                 #endif
                 deepLinkManager.handle(url)
             }
@@ -95,7 +96,7 @@ struct MatlagningApp: App {
                         .environmentObject(languageManager)
             #if DEBUG
                         .onAppear {
-                            print("📄 Presenting SharedRecipeLandingView for recipeID:", recipeID)
+                            AppLog.share.debug("Presenting SharedRecipeLandingView for recipeID: \(recipeID, privacy: .public)")
                         }
             #endif
                 }
@@ -111,7 +112,7 @@ struct MatlagningApp: App {
             get: {
                 if let id = deepLinkManager.pendingRecipeID {
                     #if DEBUG
-                    print("🟡 pendingRecipeID detected:", id)
+                    AppLog.share.debug("pendingRecipeID detected: \(id, privacy: .public)")
                     #endif
                     return PendingRecipe(id: id)
                 }
@@ -120,7 +121,7 @@ struct MatlagningApp: App {
             set: { newValue in
                 if newValue == nil {
                     #if DEBUG
-                    print("🧹 Clearing pendingRecipeID")
+                    AppLog.share.debug("Clearing pendingRecipeID")
                     #endif
                     deepLinkManager.clear()
                 }

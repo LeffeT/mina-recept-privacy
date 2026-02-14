@@ -13,6 +13,7 @@
 
 import SwiftUI
 import CoreData
+import os
 
 struct HomeView: View {
 
@@ -45,11 +46,11 @@ struct HomeView: View {
         do {
             try context.save()
             #if DEBUG
-            print("✅ baseServings fixad")
+            AppLog.storage.debug("baseServings fixad")
             #endif
         } catch {
             #if DEBUG
-            print("❌ Kunde inte spara:", error)
+            AppLog.storage.error("Kunde inte spara: \(error.localizedDescription, privacy: .public)")
             #endif
         }
     }
@@ -123,7 +124,7 @@ struct HomeView: View {
             // 🔧 Kör EN GÅNG för att fylla sortTitle på gamla recept
             .onAppear {
               #if DEBUG
-                print("DEBUG: HomeView visas")
+                AppLog.ui.debug("HomeView visas")
               #endif
                 backfillSortTitlesIfNeeded()
             }

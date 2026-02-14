@@ -9,6 +9,7 @@
 import SwiftUI
 import CoreData
 import CloudKit
+import os
 
 
 struct ShareItem: Identifiable {
@@ -141,7 +142,7 @@ struct RecipeDetailView: View {
         }
         
 #if DEBUG
-        print("✅ Bild laddad i RecipeDetailView")
+        AppLog.ui.debug("Image load requested in RecipeDetailView")
 #endif
         
     }
@@ -171,9 +172,9 @@ struct RecipeDetailView: View {
            // record["image"] = CKAsset(fileURL: fileURL)
             do {
                 try data.write(to: fileURL)
-                print("Image written to:", fileURL.path)
+                AppLog.share.debug("Image written to \(fileURL.path, privacy: .private)")
             } catch {
-                print("WRITE FAILED:", error)
+                AppLog.share.error("Image write failed: \(error.localizedDescription, privacy: .public)")
             }
 
 
