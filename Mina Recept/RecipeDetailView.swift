@@ -34,7 +34,7 @@ struct RecipeDetailView: View {
     @State private var servings: Int
     @State private var activeSheet: ActiveSheet?
     @State private var loadedImage: UIImage?
-    @State private var didLoadImage = false
+    @State private var lastLoadedFilename: String?
     @State private var shareURL: URL?
     @State private var showShareSheet = false
     @State private var share: CKShare?
@@ -80,12 +80,15 @@ struct RecipeDetailView: View {
     //   return image
     //  }
     private func loadImageIfNeeded() {
-        guard
-            !didLoadImage,
-            let filename = recipe.imageFilename
-        else { return }
-        
-        didLoadImage = true
+        guard let filename = recipe.imageFilename else {
+            loadedImage = nil
+            lastLoadedFilename = nil
+            return
+        }
+
+        guard lastLoadedFilename != filename else { return }
+
+        lastLoadedFilename = filename
         loadedImage = FileHelper.loadImage(filename: filename)
         
 #if DEBUG
@@ -173,6 +176,9 @@ struct RecipeDetailView: View {
                     )
                     
                     .onAppear {
+                        loadImageIfNeeded()
+                    }
+                    .onChange(of: recipe.imageFilename) { _, _ in
                         loadImageIfNeeded()
                     }
                     
