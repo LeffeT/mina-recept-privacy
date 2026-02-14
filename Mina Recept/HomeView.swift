@@ -171,6 +171,7 @@ struct HomeView: View {
 private struct RecipeRowImage: View {
     let filename: String?
 
+    @EnvironmentObject var themeManager: ThemeManager
     @State private var image: UIImage?
 
     var body: some View {
@@ -181,10 +182,12 @@ private struct RecipeRowImage: View {
                     .scaledToFill()
             } else {
                 RoundedRectangle(cornerRadius: 10)
-                    .fill(Color.black.opacity(0.15))
+                    .fill(themeManager.currentTheme.cardBackground)
                     .overlay(
                         Image(systemName: "fork.knife")
-                            .foregroundColor(.white.opacity(0.7))
+                            .foregroundColor(
+                                themeManager.currentTheme.primaryTextColor.opacity(0.7)
+                            )
                     )
             }
         }

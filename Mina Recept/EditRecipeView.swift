@@ -226,7 +226,7 @@ struct EditRecipeView: View {
                     
                     // MARK: - Rubrik + redigera ingredienser
                     Text(L("edit_recipe", languageManager))
-                        .tint(.white)          // 👈 markören
+                        .tint(themeManager.currentTheme.primaryTextColor)
                         .font(.largeTitle.bold())
                         .foregroundColor(themeManager.currentTheme.primaryTextColor)
                     Text(originalServingsText)
@@ -242,7 +242,7 @@ struct EditRecipeView: View {
                         label(L("title", languageManager))
                         TextField(L("title_placeholder", languageManager), text: $title)
                             .modifier(fieldStyle)
-                            .tint(.white)
+                            .tint(themeManager.currentTheme.primaryTextColor)
                         
                         // Recept
                         IngredientFormSection(
@@ -271,7 +271,7 @@ struct EditRecipeView: View {
                     
                     TextEditor(text: $instructions)
                     
-                        .tint(.white)          // 👈 markören
+                        .tint(themeManager.currentTheme.primaryTextColor)
                         .font(.body)
                         .foregroundColor(themeManager.currentTheme.primaryTextColor)
                         .padding(12)
@@ -487,7 +487,7 @@ struct IngredientFormSection: View {
             
             TextField(L("ingredient", languageManager),text: $ingredientName)
                 .modifier(fieldStyle)
-                .tint(.white)
+                .tint(themeManager.currentTheme.primaryTextColor)
             TextField(L("amount", languageManager),text: $ingredientAmount
             )
             //.keyboardType(.decimalPad)
@@ -542,7 +542,7 @@ struct IngredientFormSection: View {
             } label: {
                 Text(L("add_ingredient", languageManager))
                     .font(.headline)
-                    .foregroundColor(.white)
+                    .foregroundColor(themeManager.currentTheme.primaryTextColor)
                     .padding(.vertical, 12)
                     .padding(.horizontal, 24)
             }// blinkande text
@@ -619,5 +619,4 @@ struct IngredientFormSection: View {
                 }
             }
         }
-
 

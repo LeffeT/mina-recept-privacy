@@ -16,7 +16,7 @@ struct FieldStyle: ViewModifier {
         content
             //.foregroundStyle(.white)
             .padding(12)
-            .tint(.white) // 👈 MARKÖREN
+            .tint(theme.currentTheme.primaryTextColor)
             .background(
                 RoundedRectangle(cornerRadius: 14)
                     .fill(theme.currentTheme.buttonBackground)

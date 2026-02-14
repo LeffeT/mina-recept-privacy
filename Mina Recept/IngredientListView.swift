@@ -29,7 +29,7 @@ struct IngredientListView: View {
                                 )
                             )
                             
-                            .foregroundColor(.white)
+                            .foregroundColor(themeManager.currentTheme.primaryTextColor)
                             
                             Spacer()
                         }

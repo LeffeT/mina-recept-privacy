@@ -32,7 +32,6 @@ struct IngredientRowView: View {
          )
 
         )
-        .foregroundStyle(.white)
+        .foregroundStyle(themeManager.currentTheme.primaryTextColor)
     }
 }
-

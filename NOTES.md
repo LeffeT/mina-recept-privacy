@@ -27,3 +27,13 @@
 
 ## Fixade varningar
 - Main‑actor varning + switch‑exhaustive fix i `CloudSyncStatus`.
+
+## Senaste ändringar (2026-02-14)
+- SetupView redesign: header + temakort, språklista som rader, om‑sektion med version + iCloud‑status.
+- Temanamnen är lokaliserade, “Svart” används för svart tema.
+- Version/build hämtas nu från build‑inställningar (`MARKETING_VERSION` / `CURRENT_PROJECT_VERSION`).
+- Vit tema tillagt, och textfärger följer tema (svart text i vitt tema).
+- Bildladdning görs asynkront + cache för att undvika UI‑lagg.
+- Import visar kort “Receptet importerades”‑bekräftelse.
+- iCloud‑payload logg tystas när fil saknas (normalt vid CloudKit‑import).
+- Portions‑stepper ersatt med egen plus/minus‑kontroll (ingen svart kant i vitt tema).

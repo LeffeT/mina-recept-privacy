@@ -186,6 +186,8 @@ struct SetupView: View {
 
     private func themeTitle(for theme: AppTheme) -> String {
         switch theme {
+        case .white:
+            return L("theme_name_white", languageManager)
         case .orange:
             return L("theme_name_orange", languageManager)
         case .green:

@@ -10,6 +10,7 @@ import SwiftUI
 
 enum AppTheme: String, CaseIterable, Identifiable {
 
+    case white
     case orange
     case green
     case black
@@ -24,9 +25,10 @@ enum AppTheme: String, CaseIterable, Identifiable {
     // MARK: - Visningsnamn (för SetupView)
     var displayName: String {
         switch self {
+        case .white: return "Vit"
         case .orange: return "Orange"
         case .green:  return "Grön"
-        case .black:   return "Mörk"
+        case .black:   return "Svart"
         case .blue:   return "Blå"
         case .pink:   return "Rosa"
         case .red:    return "Röd"
@@ -36,6 +38,16 @@ enum AppTheme: String, CaseIterable, Identifiable {
     // MARK: - Bakgrund (standard i hela appen)
     var backgroundGradient: LinearGradient {
         switch self {
+
+        case .white:
+            return LinearGradient(
+                colors: [
+                    Color(white: 0.98),
+                    Color(white: 0.88)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
 
         case .orange:
             return LinearGradient(
@@ -101,6 +113,7 @@ enum AppTheme: String, CaseIterable, Identifiable {
     // MARK: - Knappbakgrund (flat / glas-look)
     var buttonBackground: Color {
         switch self {
+        case .white: return Color.black.opacity(0.08)
         case .orange: return Color.white.opacity(0.18)
         case .green:  return Color.white.opacity(0.22)
         case .black:   return Color.white.opacity(0.15)
@@ -112,6 +125,7 @@ enum AppTheme: String, CaseIterable, Identifiable {
     // MARK: - Kortbakgrund (receptkort, ingredienser m.m.)
     var cardBackground: Color {
         switch self {
+        case .white: return Color.black.opacity(0.05)
         case .orange: return Color.white.opacity(0.10)
         case .green:  return Color.white.opacity(0.12)
         case .black:   return Color.white.opacity(0.08)
@@ -123,11 +137,16 @@ enum AppTheme: String, CaseIterable, Identifiable {
 
     // MARK: - Textfärg (för framtiden)
     var primaryTextColor: Color {
-        .white
+        switch self {
+        case .white: return .black
+        case .orange, .green, .black, .blue, .pink, .red:
+            return .white
+        }
     }
     // MARK: - Destructive (delete / danger)
     var destructiveColor: Color {
         switch self {
+        case .white: return .red
         case .orange: return .red.opacity(0.9)
         case .green:  return .red.opacity(0.85)
         case .black:   return .red.opacity(0.75)
@@ -140,6 +159,7 @@ enum AppTheme: String, CaseIterable, Identifiable {
     // MARK: - Accent (outline / glow)
     var accentColor: Color {
         switch self {
+        case .white: return .black
         case .orange: return .orange
         case .green:  return .green
         case .black:   return .gray

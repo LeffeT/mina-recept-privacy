@@ -16,6 +16,51 @@ struct ShareItem: Identifiable {
     let items: [Any]
 }
 
+private struct ServingsStepper: View {
+    @Binding var value: Int
+    let range: ClosedRange<Int>
+    let theme: AppTheme
+
+    var body: some View {
+        HStack(spacing: 0) {
+            stepButton(systemName: "minus", isDisabled: value <= range.lowerBound) {
+                value = max(range.lowerBound, value - 1)
+            }
+
+            Rectangle()
+                .fill(theme.primaryTextColor.opacity(0.12))
+                .frame(width: 1)
+
+            stepButton(systemName: "plus", isDisabled: value >= range.upperBound) {
+                value = min(range.upperBound, value + 1)
+            }
+        }
+        .frame(height: 30)
+        .background(
+            RoundedRectangle(cornerRadius: 10)
+                .fill(theme.buttonBackground)
+        )
+    }
+
+    private func stepButton(
+        systemName: String,
+        isDisabled: Bool,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Image(systemName: systemName)
+                .font(.subheadline.weight(.semibold))
+                .frame(width: 36, height: 30)
+                .foregroundColor(
+                    theme.primaryTextColor.opacity(isDisabled ? 0.35 : 1.0)
+                )
+        }
+        .buttonStyle(.plain)
+        .disabled(isDisabled)
+        .accessibilityLabel(systemName == "minus" ? "Minska" : "Öka")
+    }
+}
+
 
 
 
@@ -201,7 +246,11 @@ struct RecipeDetailView: View {
                         HStack {
                             Text("\(L("portions", languageManager)): \(servings)")
                             Spacer()
-                            Stepper("", value: $servings, in: 1...12)
+                            ServingsStepper(
+                                value: $servings,
+                                range: 1...12,
+                                theme: themeManager.currentTheme
+                            )
                         }
                         .foregroundColor(themeManager.currentTheme.primaryTextColor)
                         
@@ -218,7 +267,7 @@ struct RecipeDetailView: View {
                             }
                         }
                     }
-                    .foregroundStyle(Color.white)
+                    .foregroundStyle(themeManager.currentTheme.primaryTextColor)
                     .padding()
                     .background(
                         RoundedRectangle(cornerRadius: 20)

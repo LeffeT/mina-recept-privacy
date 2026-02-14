@@ -293,7 +293,7 @@ struct AddRecipeView: View {
             }) {
                 Text(L("add_ingredient", languageManager))
                     .font(.headline)
-                    .foregroundColor(.white)
+                    .foregroundColor(themeManager.currentTheme.primaryTextColor)
                     .padding(.vertical, 12)
                     .padding(.horizontal, 24)
             }
