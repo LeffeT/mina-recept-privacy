@@ -50,6 +50,11 @@ enum iCloudPayloadStore {
             return nil
         }
 
+        guard FileManager.default.fileExists(atPath: url.path) else {
+            // Missing payload is normal when CloudKit is the primary source.
+            return nil
+        }
+
         logger.info("☁️ iCloud load → \(url.path)")
 
         guard let data = try? Data(contentsOf: url) else {

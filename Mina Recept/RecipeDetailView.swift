@@ -89,7 +89,11 @@ struct RecipeDetailView: View {
         guard lastLoadedFilename != filename else { return }
 
         lastLoadedFilename = filename
-        loadedImage = FileHelper.loadImage(filename: filename)
+        loadedImage = nil
+        FileHelper.loadImageAsync(filename: filename) { image in
+            guard lastLoadedFilename == filename else { return }
+            loadedImage = image
+        }
         
 #if DEBUG
         print("✅ Bild laddad i RecipeDetailView")

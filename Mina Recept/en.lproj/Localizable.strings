@@ -77,6 +77,7 @@
 "import_recipe_already_imported" = "This recipe has already been imported once.\nShare a new recipe.";
 "import" = "Import";
 "import_recipe_expired" = "This link has expired.\nShare a new recipe.";
+"import_recipe_success" = "Recipe imported.";
 "icloud_status_active" = "iCloud: Active";
 "icloud_status_syncing" = "iCloud: Syncing…";
 "icloud_status_off" = "iCloud: Off";

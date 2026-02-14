@@ -21,6 +21,7 @@ struct SharedRecipeLandingView: View {
 
     @State private var isImporting = false
     @State private var errorMessage: String?
+    @State private var showSuccess = false
 
     var body: some View {
         ZStack {
@@ -44,6 +45,16 @@ struct SharedRecipeLandingView: View {
                     ProgressView().padding(.top, 10)
                 }
 
+                if showSuccess {
+                    HStack(spacing: 8) {
+                        Image(systemName: "checkmark.circle.fill")
+                        Text(L("import_recipe_success", languageManager))
+                    }
+                    .foregroundColor(.green)
+                    .font(.footnote)
+                    .multilineTextAlignment(.center)
+                }
+
                 if let errorMessage {
                     Text(errorMessage)
                         .foregroundColor(.orange)
@@ -64,7 +75,7 @@ struct SharedRecipeLandingView: View {
                     }
                     .frame(maxWidth: .infinity)
                     .buttonStyle(.borderedProminent)
-                    .disabled(isImporting)
+                    .disabled(isImporting || showSuccess)
                 }
             }
             .padding(24)
@@ -77,7 +88,7 @@ struct SharedRecipeLandingView: View {
     }
 
     private func importRecipe() {
-        guard !isImporting else { return }
+        guard !isImporting, !showSuccess else { return }
 
         isImporting = true
         errorMessage = nil
@@ -87,7 +98,11 @@ struct SharedRecipeLandingView: View {
 
             onSuccess: {
                 isImporting = false
-                dismiss()
+                showSuccess = true
+
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+                    dismiss()
+                }
             },
 
             onAlreadyImported: {

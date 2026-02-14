@@ -16,6 +16,8 @@ import UIKit
 
 enum FileHelper {
 
+    private static let imageCache = NSCache<NSString, UIImage>()
+
     private static var iCloudDirectory: URL? {
         FileManager.default
             .url(forUbiquityContainerIdentifier: nil)?
@@ -42,6 +44,9 @@ enum FileHelper {
 
             let url = dir.appendingPathComponent(filename)
             try data.write(to: url, options: .atomic)
+            if let image = UIImage(data: data) {
+                imageCache.setObject(image, forKey: filename as NSString)
+            }
 
             print("☁️ Sparad i iCloud:", url)
 
@@ -53,6 +58,9 @@ enum FileHelper {
     // MARK: - Load image
 
     static func loadImage(filename: String) -> UIImage? {
+        if let cached = imageCache.object(forKey: filename as NSString) {
+            return cached
+        }
 
         guard let dir = iCloudDirectory else {
             print("❌ iCloud container saknas vid läsning")
@@ -61,12 +69,31 @@ enum FileHelper {
 
         let url = dir.appendingPathComponent(filename)
 
-        if FileManager.default.fileExists(atPath: url.path) {
-            return UIImage(contentsOfFile: url.path)
+        if FileManager.default.fileExists(atPath: url.path),
+           let image = UIImage(contentsOfFile: url.path) {
+            imageCache.setObject(image, forKey: filename as NSString)
+            return image
         }
 
         print("❌ Kunde inte läsa bild:", filename)
         return nil
+    }
+
+    static func loadImageAsync(
+        filename: String,
+        completion: @escaping (UIImage?) -> Void
+    ) {
+        if let cached = imageCache.object(forKey: filename as NSString) {
+            completion(cached)
+            return
+        }
+
+        DispatchQueue.global(qos: .userInitiated).async {
+            let image = loadImage(filename: filename)
+            DispatchQueue.main.async {
+                completion(image)
+            }
+        }
     }
 
     // MARK: - Delete
@@ -78,5 +105,6 @@ enum FileHelper {
         let url = dir.appendingPathComponent(filename)
 
         try? FileManager.default.removeItem(at: url)
+        imageCache.removeObject(forKey: filename as NSString)
     }
 }

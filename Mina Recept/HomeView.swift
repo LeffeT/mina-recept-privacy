@@ -70,25 +70,7 @@ struct HomeView: View {
                             HStack(spacing: 12) {
 
                                 // 🖼 Bild
-                                if let filename = recipe.imageFilename,
-                                   let img = FileHelper.loadImage(filename: filename) {
-
-                                    Image(uiImage: img)
-                                        .resizable()
-                                        .scaledToFill()
-                                        .frame(width: 64, height: 64)
-                                        .clipped()
-                                        .cornerRadius(10)
-
-                                } else {
-                                    RoundedRectangle(cornerRadius: 10)
-                                        .fill(Color.black.opacity(0.15))
-                                        .frame(width: 64, height: 64)
-                                        .overlay(
-                                            Image(systemName: "fork.knife")
-                                                .foregroundColor(.white.opacity(0.7))
-                                        )
-                                }
+                                RecipeRowImage(filename: recipe.imageFilename)
 
                                 // 📝 Text
                                 VStack(alignment: .leading, spacing: 4) {
@@ -186,3 +168,38 @@ struct HomeView: View {
     }
 }
 
+private struct RecipeRowImage: View {
+    let filename: String?
+
+    @State private var image: UIImage?
+
+    var body: some View {
+        ZStack {
+            if let image {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFill()
+            } else {
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(Color.black.opacity(0.15))
+                    .overlay(
+                        Image(systemName: "fork.knife")
+                            .foregroundColor(.white.opacity(0.7))
+                    )
+            }
+        }
+        .frame(width: 64, height: 64)
+        .clipped()
+        .cornerRadius(10)
+        .onAppear { loadImageIfNeeded() }
+        .onChange(of: filename) { _, _ in loadImageIfNeeded() }
+    }
+
+    private func loadImageIfNeeded() {
+        image = nil
+        guard let filename else { return }
+        FileHelper.loadImageAsync(filename: filename) { loaded in
+            image = loaded
+        }
+    }
+}
