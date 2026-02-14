@@ -521,7 +521,10 @@ struct IngredientFormSection: View {
                     )
                     
                     Spacer()
-                    
+                    Image(systemName: "chevron.up.chevron.down")
+                        .foregroundColor(
+                            themeManager.currentTheme.primaryTextColor.opacity(0.7)
+                        )
                 }
                 .padding(.horizontal, 16)
                 .frame(height: fieldHeight)
@@ -616,6 +619,5 @@ struct IngredientFormSection: View {
                 }
             }
         }
-
 
 

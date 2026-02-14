@@ -6,6 +6,17 @@
   
 */
 "settings_title" = "Settings";
+"settings_subtitle" = "Theme and language";
+"theme_section_title" = "Theme";
+"theme_section_subtitle" = "Choose a look";
+"app_info_title" = "About";
+"version_label" = "Version";
+"theme_name_orange" = "Orange";
+"theme_name_green" = "Green";
+"theme_name_black" = "Black";
+"theme_name_blue" = "Blue";
+"theme_name_pink" = "Pink";
+"theme_name_red" = "Red";
 "theme_orange" = "Orange theme";
 "theme_green" = "Green theme";
 "theme_black" = "Black theme";

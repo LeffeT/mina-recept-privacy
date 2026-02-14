@@ -6,6 +6,17 @@
   
 */
 "settings_title" = "Inställningar";
+"settings_subtitle" = "Tema och språk";
+"theme_section_title" = "Tema";
+"theme_section_subtitle" = "Välj utseende";
+"app_info_title" = "Om";
+"version_label" = "Version";
+"theme_name_orange" = "Orange";
+"theme_name_green" = "Grön";
+"theme_name_black" = "Svart";
+"theme_name_blue" = "Blå";
+"theme_name_pink" = "Rosa";
+"theme_name_red" = "Röd";
 "theme_orange" = "Orange tema";
 "theme_green" = "Grönt tema";
 "theme_black" = "Svart tema";
