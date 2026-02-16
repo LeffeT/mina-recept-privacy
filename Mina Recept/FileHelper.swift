@@ -70,10 +70,17 @@ enum FileHelper {
 
         let url = dir.appendingPathComponent(filename)
 
-        if FileManager.default.fileExists(atPath: url.path),
-           let image = UIImage(contentsOfFile: url.path) {
-            imageCache.setObject(image, forKey: filename as NSString)
-            return image
+        if FileManager.default.fileExists(atPath: url.path) {
+            if let image = UIImage(contentsOfFile: url.path) {
+                imageCache.setObject(image, forKey: filename as NSString)
+                return image
+            }
+
+            // File exists but is not readable yet → trigger download
+            if isUbiquitousFile(url) {
+                startDownloadingIfNeeded(url)
+                return nil
+            }
         }
 
         AppLog.storage.debug("Kunde inte läsa bild: \(filename, privacy: .public)")
@@ -89,11 +96,63 @@ enum FileHelper {
             return
         }
 
+        loadImageAsync(
+            filename: filename,
+            retries: 3,
+            delay: 0.8,
+            completion: completion
+        )
+    }
+
+    private static func loadImageAsync(
+        filename: String,
+        retries: Int,
+        delay: TimeInterval,
+        completion: @escaping (UIImage?) -> Void
+    ) {
         DispatchQueue.global(qos: .userInitiated).async {
             let image = loadImage(filename: filename)
-            DispatchQueue.main.async {
-                completion(image)
+            if let image {
+                DispatchQueue.main.async {
+                    completion(image)
+                }
+                return
             }
+
+            guard retries > 0,
+                  let url = imageURL(filename: filename),
+                  isUbiquitousFile(url)
+            else {
+                DispatchQueue.main.async {
+                    completion(nil)
+                }
+                return
+            }
+
+            DispatchQueue.global(qos: .userInitiated).asyncAfter(
+                deadline: .now() + delay
+            ) {
+                loadImageAsync(
+                    filename: filename,
+                    retries: retries - 1,
+                    delay: delay * 1.6,
+                    completion: completion
+                )
+            }
+        }
+    }
+
+    private static func isUbiquitousFile(_ url: URL) -> Bool {
+        FileManager.default.isUbiquitousItem(at: url)
+    }
+
+    private static func startDownloadingIfNeeded(_ url: URL) {
+        guard FileManager.default.isUbiquitousItem(at: url) else { return }
+        do {
+            try FileManager.default.startDownloadingUbiquitousItem(at: url)
+            AppLog.storage.debug("iCloud download start: \(url.lastPathComponent, privacy: .public)")
+        } catch {
+            AppLog.storage.error("iCloud download failed: \(error.localizedDescription, privacy: .public)")
         }
     }
 
