@@ -93,6 +93,15 @@ final class CloudKitService {
                 let ingredientsText = record["ingredients"] as? String ?? ""
                 let ingredients = self.parseIngredients(from: ingredientsText)
                 let expiresAt = record["expiresAt"] as? Date
+                let baseServings: Int = {
+                    if let value = record["baseServings"] as? Int {
+                        return value
+                    }
+                    if let value = record["baseServings"] as? Int64 {
+                        return Int(value)
+                    }
+                    return 1
+                }()
 
                 var imageFilename: String? = nil
                 if let asset = record["image"] as? CKAsset,
@@ -109,7 +118,8 @@ final class CloudKitService {
                     instructions: instructions,
                     imageFilename: imageFilename,
                     ingredients: ingredients,
-                    expiresAt: expiresAt
+                    expiresAt: expiresAt,
+                    baseServings: max(1, baseServings)
                 )
 
                 if let expiresAt, expiresAt <= Date() {
@@ -218,6 +228,7 @@ final class CloudKitService {
         record["title"] = payload.title as CKRecordValue
         record["instructions"] = payload.instructions as CKRecordValue
         record["expiresAt"] = expiresAt as CKRecordValue
+        record["baseServings"] = payload.baseServings as CKRecordValue
         if let creatorRecordName {
             record["creatorID"] = creatorRecordName as CKRecordValue
         }
@@ -272,7 +283,8 @@ final class CloudKitService {
                 instructions: payload.instructions,
                 imageFilename: filename,
                 ingredients: payload.ingredients,
-                expiresAt: payload.expiresAt
+                expiresAt: payload.expiresAt,
+                baseServings: payload.baseServings
             )
         }
 

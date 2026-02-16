@@ -118,13 +118,7 @@ struct RecipeDetailView: View {
     }
     
     // MARK: - Image loader
-    // private var recipeImage: UIImage? {
-    //    guard
-    //       let filename = recipe.imageFilename,
-    //      let image = FileHelper.loadImage(filename: filename)
-    //  else { return nil }
-    //   return image
-    //  }
+
     private func loadImageIfNeeded() {
         guard let filename = recipe.imageFilename else {
             loadedImage = nil
@@ -158,8 +152,6 @@ struct RecipeDetailView: View {
         if let image = loadedImage,
              let data = image.jpegData(compressionQuality: 0.8) {
 
-             // let tempURL = FileManager.default.temporaryDirectory
-               //   .appendingPathComponent(UUID().uuidString + ".jpg")
             let documents = FileManager.default.urls(
                 for: .documentDirectory,
                 in: .userDomainMask
@@ -167,17 +159,12 @@ struct RecipeDetailView: View {
 
             let fileURL = documents.appendingPathComponent("\(UUID().uuidString).jpg")
 
-
-           // try? data.write(to: fileURL)
-           // record["image"] = CKAsset(fileURL: fileURL)
             do {
                 try data.write(to: fileURL)
                 AppLog.share.debug("Image written to \(fileURL.path, privacy: .private)")
             } catch {
                 AppLog.share.error("Image write failed: \(error.localizedDescription, privacy: .public)")
             }
-
-
 
           }
         
@@ -379,7 +366,8 @@ struct RecipeDetailView: View {
                                 amount: $0.amount,
                                 unit: $0.unit ?? ""
                             )
-                        }
+                        },
+                        baseServings: Int(recipe.baseServings)
                         
                         
                     )

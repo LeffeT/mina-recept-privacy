@@ -35,6 +35,48 @@ struct PendingRecipePayload: Codable {
 
     /// Delningslänkens utgångstid
     let expiresAt: Date?
+
+    /// Antal portioner i originalreceptet
+    let baseServings: Int
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case title
+        case instructions
+        case imageFilename
+        case ingredients
+        case expiresAt
+        case baseServings
+    }
+
+    init(
+        id: String,
+        title: String,
+        instructions: String,
+        imageFilename: String?,
+        ingredients: [PendingIngredient],
+        expiresAt: Date?,
+        baseServings: Int
+    ) {
+        self.id = id
+        self.title = title
+        self.instructions = instructions
+        self.imageFilename = imageFilename
+        self.ingredients = ingredients
+        self.expiresAt = expiresAt
+        self.baseServings = baseServings
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        title = try container.decode(String.self, forKey: .title)
+        instructions = try container.decode(String.self, forKey: .instructions)
+        imageFilename = try container.decodeIfPresent(String.self, forKey: .imageFilename)
+        ingredients = try container.decode([PendingIngredient].self, forKey: .ingredients)
+        expiresAt = try container.decodeIfPresent(Date.self, forKey: .expiresAt)
+        baseServings = try container.decodeIfPresent(Int.self, forKey: .baseServings) ?? 1
+    }
 }
 
 extension PendingRecipePayload {
@@ -45,7 +87,8 @@ extension PendingRecipePayload {
             instructions: instructions,
             imageFilename: imageFilename,
             ingredients: ingredients,
-            expiresAt: date
+            expiresAt: date,
+            baseServings: baseServings
         )
     }
 }

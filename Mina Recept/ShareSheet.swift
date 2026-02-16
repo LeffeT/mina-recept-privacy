@@ -26,6 +26,7 @@ struct ShareSheet: UIViewControllerRepresentable {
     let instructions: String
     let image: UIImage?
     let ingredients: [PendingIngredient]
+    let baseServings: Int
 
     func makeUIViewController(context: Context) -> UIActivityViewController {
     #if DEBUG
@@ -93,15 +94,16 @@ struct ShareSheet: UIViewControllerRepresentable {
                 return
             }
 
-            let expiresAt = Date().addingTimeInterval(CloudKitService.shareTTL)
-            let payload = PendingRecipePayload(
-                id: id,
-                title: title,
-                instructions: instructions,
-                imageFilename: imageFilename,
-                ingredients: ingredients,
-                expiresAt: expiresAt
-            )
+        let expiresAt = Date().addingTimeInterval(CloudKitService.shareTTL)
+        let payload = PendingRecipePayload(
+            id: id,
+            title: title,
+            instructions: instructions,
+            imageFilename: imageFilename,
+            ingredients: ingredients,
+            expiresAt: expiresAt,
+            baseServings: max(1, baseServings)
+        )
           #if DEBUG
             AppLog.share.info("Share confirmed – saving payload: \(payload.id, privacy: .public)")
            #endif

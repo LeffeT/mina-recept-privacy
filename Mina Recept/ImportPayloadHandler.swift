@@ -38,6 +38,7 @@ enum ImportPayloadHandler {
         recipe.instructions = payload.instructions
         recipe.date = Date()
         recipe.imageFilename = payload.imageFilename
+        recipe.baseServings = Int16(max(1, payload.baseServings))
 
         // 4 Ingredienser
         for item in payload.ingredients {
