@@ -40,17 +40,32 @@ struct IngredientEditorView: View {
             // MARK: - Lägg till ny ingrediens
             VStack(spacing: 12) {
 
-                TextField("Ingrediens", text: $name)
+                TextField(
+                    "",
+                    text: $name,
+                    prompt: Text("Ingrediens")
+                        .foregroundColor(themeManager.currentTheme.placeholderTextColor)
+                )
                     .textFieldStyle(.roundedBorder)
 
-                TextField("Mängd (per 1 portion)", text: $amount)
+                TextField(
+                    "",
+                    text: $amount,
+                    prompt: Text("Mängd (per 1 portion)")
+                        .foregroundColor(themeManager.currentTheme.placeholderTextColor)
+                )
                    // .keyboardType(.decimalPad)
                     .keyboardType(.numbersAndPunctuation)
 
 
                     .textFieldStyle(.roundedBorder)
 
-                TextField("Enhet (t.ex. dl, g, kg)", text: $unit)
+                TextField(
+                    "",
+                    text: $unit,
+                    prompt: Text("Enhet (t.ex. dl, g, kg)")
+                        .foregroundColor(themeManager.currentTheme.placeholderTextColor)
+                )
                     .textFieldStyle(.roundedBorder)
 
                 Button("Lägg till ingrediens") {

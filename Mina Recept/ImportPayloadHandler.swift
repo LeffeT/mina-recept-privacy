@@ -46,6 +46,7 @@ enum ImportPayloadHandler {
             ingredient.id = UUID()
             ingredient.name = item.name
             ingredient.amount = item.amount
+            ingredient.amountText = item.amountText
             ingredient.unit = item.unit
             ingredient.recipe = recipe
         }

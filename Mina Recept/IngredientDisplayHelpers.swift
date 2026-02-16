@@ -10,9 +10,17 @@ import Foundation
 // Formatterar 1 → "1", 1.5 → "1.5"
 extension Double {
     var cleanString: String {
-        truncatingRemainder(dividingBy: 1) == 0
-        ? String(Int(self))
-        : String(format: "%.1f", self)
+        let formatter = NumberFormatter()
+        formatter.locale = LanguageManager.shared.locale
+        formatter.numberStyle = .decimal
+        formatter.minimumFractionDigits = 0
+        if truncatingRemainder(dividingBy: 1) == 0 {
+            formatter.maximumFractionDigits = 0
+        } else {
+            formatter.maximumFractionDigits = 2
+        }
+
+        return formatter.string(from: NSNumber(value: self)) ?? String(self)
     }
 }
 
@@ -53,4 +61,3 @@ func ingredientDisplayText(
 
     return "\(scaledAmount.cleanString) \(name)"
 }
-

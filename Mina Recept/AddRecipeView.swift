@@ -182,15 +182,18 @@ struct AddRecipeView: View {
     private var form: some View {
         VStack(alignment: .leading, spacing: 12) {
             
-            
             Text(L("new_recipe", languageManager))
                 .font(.largeTitle.bold())
-                //.foregroundColor(themeManager.currentTheme.primaryTextColor)
                 .foregroundStyle(themeManager.currentTheme.primaryTextColor)
                 .frame(maxWidth: .infinity, alignment: .center)
             
             label(L("title", languageManager))
-            TextField(L("title_placeholder", languageManager), text: $title)
+            TextField(
+                "",
+                text: $title,
+                prompt: Text(L("title_placeholder", languageManager))
+                    .foregroundColor(themeManager.currentTheme.placeholderTextColor)
+            )
                 .modifier(fieldStyle)
                 .foregroundStyle(themeManager.currentTheme.primaryTextColor)
         
@@ -202,8 +205,6 @@ struct AddRecipeView: View {
                       
             )
             .keyboardType(.numbersAndPunctuation)
-
-            //.tint(.white)
             .padding(12)
             .background(themeManager.currentTheme.buttonBackground)
             .clipShape(RoundedRectangle(cornerRadius: 14))
@@ -214,8 +215,10 @@ struct AddRecipeView: View {
             label(L("ingredients", languageManager))
             
             TextField(
-                L("ingredient", languageManager),
-                text: $ingredientName
+                "",
+                text: $ingredientName,
+                prompt: Text(L("ingredient", languageManager))
+                    .foregroundColor(themeManager.currentTheme.placeholderTextColor)
             )
             .modifier(fieldStyle)
             .foregroundStyle(themeManager.currentTheme.primaryTextColor)
@@ -223,8 +226,10 @@ struct AddRecipeView: View {
             //.tint(.white)
             
             TextField(
-               L("amount", languageManager),
-               text: $ingredientAmount
+               "",
+               text: $ingredientAmount,
+               prompt: Text(L("amount", languageManager))
+                   .foregroundColor(themeManager.currentTheme.placeholderTextColor)
                 
             )
             //.keyboardType(.decimalPad)
@@ -375,6 +380,7 @@ struct AddRecipeView: View {
             TempIngredient(
                 name: ingredientName,
                 amount: value,
+                amountText: ingredientAmount.trimmingCharacters(in: .whitespacesAndNewlines),
                 unit: ingredientUnit,
                 scalable: true,
                 pluralName: nil
@@ -407,6 +413,7 @@ struct AddRecipeView: View {
                     ing.id = UUID()
                     ing.name = temp.name
                     ing.amount = temp.amount
+                    ing.amountText = temp.amountText
                     ing.unit = temp.unit
                     ing.scalable = temp.scalable
                     ing.pluralName = temp.pluralName
@@ -508,6 +515,7 @@ struct AddRecipeView: View {
             let id = UUID()
             let name: String
             let amount: Double
+            let amountText: String?
             let unit: String
             let scalable: Bool
             let pluralName: String?

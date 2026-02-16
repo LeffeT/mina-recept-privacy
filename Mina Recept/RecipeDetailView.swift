@@ -364,6 +364,7 @@ struct RecipeDetailView: View {
                             PendingIngredient(
                                 name: $0.name ?? "",
                                 amount: $0.amount,
+                                amountText: $0.amountText,
                                 unit: $0.unit ?? ""
                             )
                         },

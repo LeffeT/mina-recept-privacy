@@ -72,11 +72,13 @@ struct EditRecipeView: View {
     private var fieldStyle: some ViewModifier {
         FieldStyle(theme: themeManager)
     }
-        private func loadIngredientForEdit(_ ingredient: IngredientEntity) {
-          ingredientName = ingredient.name ?? ""
-          ingredientAmount = ingredient.amount.cleanString
-            ingredientUnit = unitKey(fromLocalized: ingredient.unit ?? "")
-      }
+    private func loadIngredientForEdit(_ ingredient: IngredientEntity) {
+      ingredientName = ingredient.name ?? ""
+      ingredientAmount = ingredient.amountText?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
+      ? (ingredient.amountText ?? "")
+      : ingredient.amount.cleanString
+        ingredientUnit = unitKey(fromLocalized: ingredient.unit ?? "")
+  }
    
     
     init(recipe: Recipe) {
@@ -105,7 +107,12 @@ struct EditRecipeView: View {
         text: Binding<String>,
         keyboard: UIKeyboardType = .default
     ) -> some View {
-        TextField(L(key, languageManager), text: text)
+        TextField(
+            "",
+            text: text,
+            prompt: Text(L(key, languageManager))
+                .foregroundColor(themeManager.currentTheme.placeholderTextColor)
+        )
             .keyboardType(keyboard)
             .tint(themeManager.currentTheme.primaryTextColor)
             .padding(12)
@@ -241,7 +248,12 @@ struct EditRecipeView: View {
                         
                         // Titel
                         label(L("title", languageManager))
-                        TextField(L("title_placeholder", languageManager), text: $title)
+                        TextField(
+                            "",
+                            text: $title,
+                            prompt: Text(L("title_placeholder", languageManager))
+                                .foregroundColor(themeManager.currentTheme.placeholderTextColor)
+                        )
                             .modifier(fieldStyle)
                             .tint(themeManager.currentTheme.primaryTextColor)
                         
@@ -395,6 +407,7 @@ struct EditRecipeView: View {
         ing.id = UUID()
         ing.name = ingredientName
         ing.amount = value
+        ing.amountText = ingredientAmount.trimmingCharacters(in: .whitespacesAndNewlines)
         ing.unit = ingredientUnit
         ing.scalable = true
         ing.recipe = recipe
@@ -486,10 +499,19 @@ struct IngredientFormSection: View {
             
                 .foregroundColor(themeManager.currentTheme.primaryTextColor)
             
-            TextField(L("ingredient", languageManager),text: $ingredientName)
+            TextField(
+                "",
+                text: $ingredientName,
+                prompt: Text(L("ingredient", languageManager))
+                    .foregroundColor(themeManager.currentTheme.placeholderTextColor)
+            )
                 .modifier(fieldStyle)
                 .tint(themeManager.currentTheme.primaryTextColor)
-            TextField(L("amount", languageManager),text: $ingredientAmount
+            TextField(
+                "",
+                text: $ingredientAmount,
+                prompt: Text(L("amount", languageManager))
+                    .foregroundColor(themeManager.currentTheme.placeholderTextColor)
             )
             //.keyboardType(.decimalPad)
             .keyboardType(.numbersAndPunctuation)
@@ -587,9 +609,10 @@ struct IngredientFormSection: View {
             //färg på fältbakgrund
             ForEach(recipe.ingredientArray) { ingredient in
                 HStack {
-                   // Text("\(ingredient.amount.cleanString) \(ingredient.unit ?? "") \(ingredient.name ?? "")")
+                    let rawAmount = ingredient.amountText?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+                    let amountString = rawAmount.isEmpty ? ingredient.amount.cleanString : rawAmount
                     Text(
-                        "\(ingredient.amount.cleanString) " +
+                        "\(amountString) " +
                         L("unit.\(ingredient.unit ?? "")", languageManager) +
                         " \(ingredient.name ?? "")"
                     )

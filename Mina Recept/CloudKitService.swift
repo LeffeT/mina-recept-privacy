@@ -238,7 +238,9 @@ final class CloudKitService {
         }
 
         let ingredientText = payload.ingredients.map {
-            "\($0.name) \($0.amount) \($0.unit)"
+            let raw = $0.amountText?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            let amountString = raw.isEmpty ? "\($0.amount)" : raw
+            return "\($0.name) \(amountString) \($0.unit)"
         }.joined(separator: "\n")
 
         record["ingredients"] = ingredientText as CKRecordValue
@@ -320,7 +322,12 @@ final class CloudKitService {
             let name = nameParts.joined(separator: " ")
             let amount = Double(amountString) ?? 0
 
-            return PendingIngredient(name: name, amount: amount, unit: unit)
+            return PendingIngredient(
+                name: name,
+                amount: amount,
+                amountText: amountString,
+                unit: unit
+            )
         }
     }
 }

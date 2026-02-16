@@ -8,7 +8,7 @@ import Foundation
 
 extension IngredientEntity {
     var safeAmount: Double { amount }
+    var safeAmountText: String { amountText ?? "" }
     var safeUnit: String { unit ?? "" }
     var safeName: String { name ?? "" }
 }
-

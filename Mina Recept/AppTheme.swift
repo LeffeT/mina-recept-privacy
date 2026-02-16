@@ -143,6 +143,16 @@ enum AppTheme: String, CaseIterable, Identifiable {
             return .white
         }
     }
+
+    // MARK: - Placeholder textfärg
+    var placeholderTextColor: Color {
+        switch self {
+        case .white:
+            return Color.black.opacity(0.45)
+        case .orange, .green, .black, .blue, .pink, .red:
+            return Color.white.opacity(0.6)
+        }
+    }
     // MARK: - Destructive (delete / danger)
     var destructiveColor: Color {
         switch self {

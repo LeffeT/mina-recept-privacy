@@ -17,7 +17,12 @@ struct ThemedTextField: View {
     @EnvironmentObject var languageManager: LanguageManager
 
     var body: some View {
-        TextField(L(key, languageManager), text: $text)
+        TextField(
+            "",
+            text: $text,
+            prompt: Text(L(key, languageManager))
+                .foregroundColor(themeManager.currentTheme.placeholderTextColor)
+        )
             .keyboardType(keyboard)
             .tint(themeManager.currentTheme.primaryTextColor)
             .padding(12)
