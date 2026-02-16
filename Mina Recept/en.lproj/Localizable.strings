@@ -40,6 +40,7 @@
 "new_recipe" = "New recipe";
 "title" = "Title";
 "instructions" = "Instructions";
+"ingredients" = "Ingredients";
 "title_placeholder" = "E.g. Simple tomato soup";
 "cancel" = "Cancel";
 "change_image" = "Change image";

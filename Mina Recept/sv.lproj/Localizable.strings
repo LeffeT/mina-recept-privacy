@@ -38,7 +38,8 @@
 "save" = "Spara";
 "new_recipe" = "Nytt recept";
 "title" = "Titel";
-"instructions" = "Recept";
+"instructions" = "Gör så här";
+"ingredients" = "Ingredienser";
 "title_placeholder" = "Ex: Enkel tomatsoppa";
 "cancel" = "Avbryt";
 "change_image" = "Byt bild";

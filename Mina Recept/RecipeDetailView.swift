@@ -229,19 +229,12 @@ struct RecipeDetailView: View {
                     // MARK: - Kort: portioner + ingredienser
                     
                     VStack(alignment: .leading, spacing: 16) {
-                        
-                        // Portionsrad
-                        HStack {
-                            Text("\(L("portions", languageManager)): \(servings)")
-                            Spacer()
-                            ServingsStepper(
-                                value: $servings,
-                                range: 1...12,
-                                theme: themeManager.currentTheme
+                        Text(L("ingredients", languageManager))
+                            .font(.headline)
+                            .foregroundColor(
+                                themeManager.currentTheme.primaryTextColor.opacity(0.85)
                             )
-                        }
-                        .foregroundColor(themeManager.currentTheme.primaryTextColor)
-                        
+
                         // Ingredienslista
                         VStack(alignment: .leading, spacing: 8) {
                             ForEach(recipe.ingredientArray, id: \.id) { ingredient in
@@ -254,6 +247,20 @@ struct RecipeDetailView: View {
                                 )
                             }
                         }
+
+                        Divider().opacity(0.2)
+
+                        // Portionsrad
+                        HStack {
+                            Text("\(L("portions", languageManager)): \(servings)")
+                            Spacer()
+                            ServingsStepper(
+                                value: $servings,
+                                range: 1...12,
+                                theme: themeManager.currentTheme
+                            )
+                        }
+                        .foregroundColor(themeManager.currentTheme.primaryTextColor)
                     }
                     .foregroundStyle(themeManager.currentTheme.primaryTextColor)
                     .padding()
