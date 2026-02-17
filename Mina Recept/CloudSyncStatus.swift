@@ -64,8 +64,9 @@ final class CloudSyncStatus: ObservableObject {
                 }
                 switch status {
                 case .available:
-                    if self.state == .unavailable {
+                    if self.state == .unavailable || self.state == .error {
                         self.state = .idle
+                        self.lastError = nil
                     }
                 case .noAccount, .restricted, .couldNotDetermine, .temporarilyUnavailable:
                     self.state = .unavailable
@@ -103,6 +104,15 @@ final class CloudSyncStatus: ObservableObject {
                 self.activeEventIDs.remove(event.identifier)
 
                 if let error = event.error {
+                    if self.isTransientSyncError(error) {
+                        self.lastError = error.localizedDescription
+                        if self.activeEventIDs.isEmpty {
+                            self.state = .idle
+                            self.syncStartDate = nil
+                        }
+                        return
+                    }
+
                     self.state = .error
                     self.lastError = error.localizedDescription
                     return
@@ -135,6 +145,22 @@ final class CloudSyncStatus: ObservableObject {
                 }
             }
             .store(in: &cancellables)
+    }
+
+    private func isTransientSyncError(_ error: Error) -> Bool {
+        guard let ckError = error as? CKError else { return false }
+        switch ckError.code {
+        case .changeTokenExpired,
+             .zoneBusy,
+             .serviceUnavailable,
+             .requestRateLimited,
+             .networkFailure,
+             .networkUnavailable,
+             .partialFailure:
+            return true
+        default:
+            return false
+        }
     }
 
     private func observeLocalChanges() {
