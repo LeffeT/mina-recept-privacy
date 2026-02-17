@@ -229,6 +229,20 @@ struct RecipeDetailView: View {
                     // MARK: - Kort: portioner + ingredienser
                     
                     VStack(alignment: .leading, spacing: 16) {
+                        // Portionsrad (överst)
+                        HStack {
+                            Text("\(L("serves", languageManager)): \(servings)")
+                            Spacer()
+                            ServingsStepper(
+                                value: $servings,
+                                range: 1...12,
+                                theme: themeManager.currentTheme
+                            )
+                        }
+                        .foregroundColor(themeManager.currentTheme.primaryTextColor)
+
+                        Divider().opacity(0.2)
+
                         Text(L("ingredients", languageManager))
                             .font(.headline)
                             .foregroundColor(
@@ -247,20 +261,6 @@ struct RecipeDetailView: View {
                                 )
                             }
                         }
-
-                        Divider().opacity(0.2)
-
-                        // Portionsrad
-                        HStack {
-                            Text("\(L("portions", languageManager)): \(servings)")
-                            Spacer()
-                            ServingsStepper(
-                                value: $servings,
-                                range: 1...12,
-                                theme: themeManager.currentTheme
-                            )
-                        }
-                        .foregroundColor(themeManager.currentTheme.primaryTextColor)
                     }
                     .foregroundStyle(themeManager.currentTheme.primaryTextColor)
                     .padding()
@@ -316,10 +316,6 @@ struct RecipeDetailView: View {
                         activeSheet = .share
                     
                         }
-
-                      //  }
-                        
-                        
                         Button(L("edit", languageManager)) {
                             activeSheet = .edit
                         }
@@ -365,7 +361,6 @@ struct RecipeDetailView: View {
                     ShareSheet(
                         title: recipe.title ?? "",
                         instructions: recipe.instructions ?? "",
-                        // image: recipeImage,
                         image: loadedImage,
                         ingredients: recipe.ingredientArray.map {
                             PendingIngredient(
