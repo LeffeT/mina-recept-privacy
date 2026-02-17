@@ -38,3 +38,12 @@
 - iCloud‑payload logg tystas när fil saknas (normalt vid CloudKit‑import).
 - Portions‑stepper ersatt med egen plus/minus‑kontroll (ingen svart kant i vitt tema).
 - Bytte `print` mot `os.Logger` via `AppLog` för filtrerbara loggar i Console.
+
+## Senaste ändringar (2026-02-16)
+- Delning/import: `baseServings` skickas med och sparas vid import.
+- Placeholder‑text färg justerad för vit tema via `placeholderTextColor`.
+- Stöd för bråk i mängd (t.ex. `1/2`, `1 1/2`) vid inmatning.
+- Bevarar originaltext för mängd (`amountText`) i Core Data och delning.
+- Delnings‑payload skickar med `amountText` så `1/2` inte blir `0,5`.
+- “Recept” → “Gör så här” och “Ingredienser” rubrik tillagd (eng: Instructions/Ingredients).
+- iCloud‑bilder: triggar nedladdning om filen finns men inte är läsbar.

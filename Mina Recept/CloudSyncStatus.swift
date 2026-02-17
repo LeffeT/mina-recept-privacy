@@ -34,6 +34,7 @@ final class CloudSyncStatus: ObservableObject {
         self.container = container
         updateAvailability()
         observeEvents()
+        observeLocalChanges()
         refreshAccountStatus()
     }
 
@@ -134,5 +135,65 @@ final class CloudSyncStatus: ObservableObject {
                 }
             }
             .store(in: &cancellables)
+    }
+
+    private func observeLocalChanges() {
+        NotificationCenter.default
+            .publisher(
+                for: .NSManagedObjectContextDidSave,
+                object: container.viewContext
+            )
+            .receive(on: RunLoop.main)
+            .sink { [weak self] notification in
+                guard let self else { return }
+                guard self.state != .unavailable else { return }
+
+                let inserts = notification.userInfo?[NSInsertedObjectsKey] as? Set<NSManagedObject>
+                let updates = notification.userInfo?[NSUpdatedObjectsKey] as? Set<NSManagedObject>
+                let deletes = notification.userInfo?[NSDeletedObjectsKey] as? Set<NSManagedObject>
+
+                let hasChanges = (inserts?.isEmpty == false) ||
+                    (updates?.isEmpty == false) ||
+                    (deletes?.isEmpty == false)
+
+                guard hasChanges else { return }
+                self.markLocalChange()
+            }
+            .store(in: &cancellables)
+    }
+
+    private func markLocalChange() {
+        syncingEndHoldTask?.cancel()
+
+        if state != .syncing {
+            syncStartDate = Date()
+            state = .syncing
+        }
+
+        lastSyncDate = Date()
+
+        let startDate = syncStartDate ?? Date()
+        let elapsed = Date().timeIntervalSince(startDate)
+        let remaining = max(0, minimumSyncDuration - elapsed)
+
+        guard remaining > 0 else {
+            if activeEventIDs.isEmpty {
+                state = .idle
+                syncStartDate = nil
+            }
+            return
+        }
+
+        syncingEndHoldTask = Task { @MainActor in
+            try? await Task.sleep(
+                nanoseconds: UInt64(remaining * 1_000_000_000)
+            )
+            guard activeEventIDs.isEmpty,
+                  state != .unavailable,
+                  state != .error
+            else { return }
+            state = .idle
+            syncStartDate = nil
+        }
     }
 }
