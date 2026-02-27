@@ -81,6 +81,9 @@ struct RecipeDetailView: View {
     @State private var activeSheet: ActiveSheet?
     @State private var loadedImage: UIImage?
     @State private var lastLoadedFilename: String?
+    @State private var selectedGroupIndex: Int = 0
+    @State private var ingredientTabHeight: CGFloat = 120
+    @State private var ingredientPageHeights: [Int: CGFloat] = [:]
     @State private var shareURL: URL?
     @State private var showShareSheet = false
     @State private var share: CKShare?
@@ -118,6 +121,56 @@ struct RecipeDetailView: View {
     }
     
     // MARK: - Image loader
+
+    private struct IngredientGroup: Identifiable {
+        let id: Int
+        let title: String
+        let ingredients: [IngredientEntity]
+    }
+
+    private struct IngredientPageHeightKey: PreferenceKey {
+        static var defaultValue: [Int: CGFloat] = [:]
+
+        static func reduce(value: inout [Int: CGFloat], nextValue: () -> [Int: CGFloat]) {
+            value.merge(nextValue(), uniquingKeysWith: { _, new in new })
+        }
+    }
+
+    private var ingredientGroups: [IngredientGroup] {
+        let titles = [
+            recipe.group1Title ?? "",
+            recipe.group2Title ?? "",
+            recipe.group3Title ?? ""
+        ]
+
+        let groups = (0..<3).compactMap { index -> IngredientGroup? in
+            let items = recipe.ingredientArray.filter { $0.safeGroupIndex == index }
+            if items.isEmpty {
+                return nil
+            }
+
+            let rawTitle = titles.indices.contains(index) ? titles[index] : ""
+            let title = rawTitle.isEmpty ? defaultGroupTitle(for: index) : rawTitle
+            return IngredientGroup(id: index, title: title, ingredients: items)
+        }
+
+        if groups.isEmpty {
+            return [
+                IngredientGroup(
+                    id: 0,
+                    title: defaultGroupTitle(for: 0),
+                    ingredients: []
+                )
+            ]
+        }
+
+        return groups
+    }
+
+    private func defaultGroupTitle(for index: Int) -> String {
+        let base = L("ingredients", languageManager)
+        return index == 0 ? base : "\(base) \(index + 1)"
+    }
 
     private func loadImageIfNeeded() {
         guard let filename = recipe.imageFilename else {
@@ -243,22 +296,83 @@ struct RecipeDetailView: View {
 
                         Divider().opacity(0.2)
 
-                        Text(L("ingredients", languageManager))
-                            .font(.headline)
-                            .foregroundColor(
-                                themeManager.currentTheme.primaryTextColor.opacity(0.85)
-                            )
-
-                        // Ingredienslista
                         VStack(alignment: .leading, spacing: 8) {
-                            ForEach(recipe.ingredientArray, id: \.id) { ingredient in
-                                IngredientRowView(
-                                    ingredient: ingredient,
-                                    servings: servings,
-                                    baseServings: Int(recipe.baseServings),
-                                    themeManager: themeManager,
-                                    languageManager: languageManager
-                                )
+                            TabView(selection: $selectedGroupIndex) {
+                                ForEach(ingredientGroups) { group in
+                                    VStack(alignment: .leading, spacing: 8) {
+                                        Text(group.title)
+                                            .font(.headline)
+                                            .foregroundColor(
+                                                themeManager.currentTheme.primaryTextColor.opacity(0.85)
+                                            )
+
+                                        if group.ingredients.isEmpty {
+                                            Text(L("ingredients", languageManager))
+                                                .foregroundColor(
+                                                    themeManager.currentTheme.primaryTextColor.opacity(0.5)
+                                                )
+                                        } else {
+                                            ForEach(group.ingredients, id: \.id) { ingredient in
+                                                IngredientRowView(
+                                                    ingredient: ingredient,
+                                                    servings: servings,
+                                                    baseServings: Int(recipe.baseServings),
+                                                    themeManager: themeManager,
+                                                    languageManager: languageManager
+                                                )
+                                            }
+                                        }
+                                    }
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .contentShape(Rectangle())
+                                    .background(
+                                        GeometryReader { proxy in
+                                            Color.clear.preference(
+                                                key: IngredientPageHeightKey.self,
+                                                value: [group.id: proxy.size.height]
+                                            )
+                                        }
+                                    )
+                                    .tag(group.id)
+                                }
+                            }
+                            .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .frame(height: max(ingredientTabHeight, 80), alignment: .leading)
+
+                            if ingredientGroups.count > 1 {
+                                HStack(spacing: 8) {
+                                    ForEach(ingredientGroups) { group in
+                                        Circle()
+                                            .fill(
+                                                selectedGroupIndex == group.id
+                                                ? themeManager.currentTheme.primaryTextColor
+                                                : themeManager.currentTheme.primaryTextColor.opacity(0.35)
+                                            )
+                                            .frame(width: 8, height: 8)
+                                    }
+                                }
+                                .frame(maxWidth: .infinity, alignment: .center)
+                                .padding(.top, 2)
+                            }
+                        }
+                        .onAppear {
+                            if let first = ingredientGroups.first {
+                                selectedGroupIndex = first.id
+                            }
+                            if let height = ingredientPageHeights[selectedGroupIndex] {
+                                ingredientTabHeight = height
+                            }
+                        }
+                        .onChange(of: selectedGroupIndex) { _, newValue in
+                            if let height = ingredientPageHeights[newValue] {
+                                ingredientTabHeight = height
+                            }
+                        }
+                        .onPreferenceChange(IngredientPageHeightKey.self) { values in
+                            ingredientPageHeights.merge(values, uniquingKeysWith: { _, new in new })
+                            if let height = ingredientPageHeights[selectedGroupIndex] {
+                                ingredientTabHeight = height
                             }
                         }
                     }
@@ -367,10 +481,16 @@ struct RecipeDetailView: View {
                                 name: $0.name ?? "",
                                 amount: $0.amount,
                                 amountText: $0.amountText,
-                                unit: $0.unit ?? ""
+                                unit: $0.unit ?? "",
+                                groupIndex: $0.safeGroupIndex
                             )
                         },
-                        baseServings: Int(recipe.baseServings)
+                        baseServings: Int(recipe.baseServings),
+                        groupTitles: [
+                            recipe.group1Title ?? "",
+                            recipe.group2Title ?? "",
+                            recipe.group3Title ?? ""
+                        ]
                         
                         
                     )

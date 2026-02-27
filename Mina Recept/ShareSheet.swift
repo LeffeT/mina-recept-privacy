@@ -27,6 +27,7 @@ struct ShareSheet: UIViewControllerRepresentable {
     let image: UIImage?
     let ingredients: [PendingIngredient]
     let baseServings: Int
+    let groupTitles: [String]?
 
     func makeUIViewController(context: Context) -> UIActivityViewController {
     #if DEBUG
@@ -102,7 +103,8 @@ struct ShareSheet: UIViewControllerRepresentable {
             imageFilename: imageFilename,
             ingredients: ingredients,
             expiresAt: expiresAt,
-            baseServings: max(1, baseServings)
+            baseServings: max(1, baseServings),
+            groupTitles: groupTitles
         )
           #if DEBUG
             AppLog.share.info("Share confirmed – saving payload: \(payload.id, privacy: .public)")

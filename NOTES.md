@@ -47,3 +47,15 @@
 - Delnings‑payload skickar med `amountText` så `1/2` inte blir `0,5`.
 - “Recept” → “Gör så här” och “Ingredienser” rubrik tillagd (eng: Instructions/Ingredients).
 - iCloud‑bilder: triggar nedladdning om filen finns men inte är läsbar.
+
+## Senaste ändringar (2026-02-17)
+- Portions‑kontrollen flyttad över ingredienslistan i `RecipeDetailView`.
+- iCloud‑status uppdateras vid lokala saves/deletes (utan att gå tillbaka till StartView).
+
+## Senaste ändringar (2026-02-27)
+- Ingredienser kan delas upp i 3 kategorier (Add/Edit) med egna rubriker.
+- Kategorinamn sparas på receptet (`group1Title`/`group2Title`/`group3Title`) och `groupIndex` sparas per ingrediens (Core Data‑schema uppdaterat).
+- Delning/import skickar med kategori‑rubriker och `groupIndex` så grupperna bevaras.
+- `RecipeDetailView` visar ingredienser per kategori i swipe‑vy (TabView) med egna dots och dynamisk höjd.
+- “Gör så här” flyttad i Edit‑vyn så rubriken ligger precis ovanför instruktionstexten.
+- Segment‑numren (1–3) i vitt tema tvingas till svart text.

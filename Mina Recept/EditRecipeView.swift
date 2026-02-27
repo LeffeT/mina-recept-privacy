@@ -28,11 +28,9 @@ struct EditRecipeView: View {
     @State private var pickedItem: PhotosPickerItem?
     @State private var pickedImage: UIImage?
     @State private var showCamera = false
-    //@State private var newName = ""
     @State private var ingredient = ""
     @State private var ingredientName: String = ""
     @State private var ingredientAmount: String = ""
-    //@State private var newAmount = ""
     @State private var amount = ""
     @State private var unit = ""
     @State private var newUnit = ""
@@ -40,7 +38,10 @@ struct EditRecipeView: View {
     @State private var pulse = false
     @State private var hasSubmitted = false
     @State private var ingredientUnit: String = ""
-    //@State private var tempIngredients: [TempIngredient] = []
+    @State private var ingredientGroupIndex: Int = 0
+    @State private var groupTitle1: String = ""
+    @State private var groupTitle2: String = ""
+    @State private var groupTitle3: String = ""
     @FetchRequest private var ingredients: FetchedResults<IngredientEntity>
     private let unitOptions = [
         "pcs", "g", "kg", "ml", "dl", "l", "tsp", "tbsp", "krm", "pinch", "clove", "slice", "cl", "leaf", "package", "stalk", "can", "bunch"
@@ -67,7 +68,7 @@ struct EditRecipeView: View {
         themeManager.currentTheme.destructiveColor
     }// portionsräknare
     private var originalServingsText: String {
-        "\(L("portions", languageManager)) \(recipe.baseServings)"
+        "\(L("serves", languageManager)) \(recipe.baseServings)"
     }
     private var fieldStyle: some ViewModifier {
         FieldStyle(theme: themeManager)
@@ -78,6 +79,7 @@ struct EditRecipeView: View {
       ? (ingredient.amountText ?? "")
       : ingredient.amount.cleanString
         ingredientUnit = unitKey(fromLocalized: ingredient.unit ?? "")
+        ingredientGroupIndex = ingredient.safeGroupIndex
   }
    
     
@@ -96,6 +98,22 @@ struct EditRecipeView: View {
                 recipe
             )
         )
+    }
+    
+    private var currentGroupTitle: Binding<String> {
+        switch ingredientGroupIndex {
+        case 1:
+            return $groupTitle2
+        case 2:
+            return $groupTitle3
+        default:
+            return $groupTitle1
+        }
+    }
+    
+    private func normalizedGroupTitle(_ value: String) -> String? {
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
     }
 
 
@@ -262,6 +280,10 @@ struct EditRecipeView: View {
                             ingredientName: $ingredientName,
                             ingredientAmount: $ingredientAmount,
                             ingredientUnit: $ingredientUnit,
+                            groupIndex: $ingredientGroupIndex,
+                            groupTitle1: $groupTitle1,
+                            groupTitle2: $groupTitle2,
+                            groupTitle3: $groupTitle3,
                             themeManager: themeManager,
                             languageManager: languageManager,
                             unitOptions: unitOptions,
@@ -274,25 +296,23 @@ struct EditRecipeView: View {
                             recipe: recipe,
                             destructiveColor: destructiveColor
                         )
-                        
-                        
-                        label(L("instructions", languageManager))
-                        
                     }
                     .padding(.top, 8)
                     
-                    
-                    TextEditor(text: $instructions)
-                    
-                        .tint(themeManager.currentTheme.primaryTextColor)
-                        .font(.body)
-                        .foregroundColor(themeManager.currentTheme.primaryTextColor)
-                        .padding(12)
-                        .frame(minHeight: 220)
-                        .background(editorBackground)
-                        .clipShape(RoundedRectangle(cornerRadius: 14))
-                        .scrollContentBackground(.hidden)
-                        .scrollDisabled(false)   // ✅ scrollar när man skriver
+                    VStack(alignment: .leading, spacing: 12) {
+                        label(L("instructions", languageManager))
+                        
+                        TextEditor(text: $instructions)
+                            .tint(themeManager.currentTheme.primaryTextColor)
+                            .font(.body)
+                            .foregroundColor(themeManager.currentTheme.primaryTextColor)
+                            .padding(12)
+                            .frame(minHeight: 220)
+                            .background(editorBackground)
+                            .clipShape(RoundedRectangle(cornerRadius: 14))
+                            .scrollContentBackground(.hidden)
+                            .scrollDisabled(false)   // ✅ scrollar när man skriver
+                    }
                 }
                 .frame(maxWidth: formMaxWidth)          // ✅ samma bredd för allt
                 .frame(maxWidth: .infinity)              // ✅ centrerad kolumn
@@ -313,6 +333,9 @@ struct EditRecipeView: View {
               ingredientName = ""
               ingredientAmount = ""
               ingredientUnit = ""
+            groupTitle1 = recipe.group1Title ?? L("ingredients", languageManager)
+            groupTitle2 = recipe.group2Title ?? ""
+            groupTitle3 = recipe.group3Title ?? ""
             
             if let filename = recipe.imageFilename {
                 pickedImage = FileHelper.loadImage(filename: filename)
@@ -410,6 +433,7 @@ struct EditRecipeView: View {
         ing.amountText = ingredientAmount.trimmingCharacters(in: .whitespacesAndNewlines)
         ing.unit = ingredientUnit
         ing.scalable = true
+        ing.groupIndex = Int16(ingredientGroupIndex)
         ing.recipe = recipe
         ing.createdAt = Date()
 
@@ -434,6 +458,9 @@ struct EditRecipeView: View {
     private func save() {
         recipe.title = title
         recipe.instructions = instructions
+        recipe.group1Title = normalizedGroupTitle(groupTitle1)
+        recipe.group2Title = normalizedGroupTitle(groupTitle2)
+        recipe.group3Title = normalizedGroupTitle(groupTitle3)
         
         if let img = pickedImage {
             let finalImage = img.normalizedAndResized(
@@ -465,6 +492,10 @@ struct IngredientFormSection: View {
     @Binding var ingredientName: String
     @Binding var ingredientAmount: String
     @Binding var ingredientUnit: String
+    @Binding var groupIndex: Int
+    @Binding var groupTitle1: String
+    @Binding var groupTitle2: String
+    @Binding var groupTitle3: String
     
     let themeManager: ThemeManager
     let languageManager: LanguageManager
@@ -491,13 +522,58 @@ struct IngredientFormSection: View {
         EditorStyle(theme: themeManager)
     }
     
+    private var currentGroupTitle: Binding<String> {
+        switch groupIndex {
+        case 1:
+            return $groupTitle2
+        case 2:
+            return $groupTitle3
+        default:
+            return $groupTitle1
+        }
+    }
+    
+    private var filteredIngredients: [IngredientEntity] {
+        recipe.ingredientArray.filter { $0.safeGroupIndex == groupIndex }
+    }
+    
     var body: some View {
         // Group {
         VStack(alignment: .leading, spacing: 8) {
-            Text(L("ingredient", languageManager))
+            HStack {
+                TextField(
+                    "",
+                    text: currentGroupTitle,
+                    prompt: Text(L("ingredients", languageManager))
+                        .foregroundColor(themeManager.currentTheme.placeholderTextColor)
+                )
+                .textFieldStyle(.plain)
                 .font(.headline)
-            
                 .foregroundColor(themeManager.currentTheme.primaryTextColor)
+
+                Spacer()
+
+                Group {
+                    if themeManager.currentTheme == .white {
+                        Picker("", selection: $groupIndex) {
+                            Text("1").tag(0)
+                            Text("2").tag(1)
+                            Text("3").tag(2)
+                        }
+                        .pickerStyle(.segmented)
+                        .frame(maxWidth: 140)
+                        .environment(\.colorScheme, .light)
+                    } else {
+                        Picker("", selection: $groupIndex) {
+                            Text("1").tag(0)
+                            Text("2").tag(1)
+                            Text("3").tag(2)
+                        }
+                        .pickerStyle(.segmented)
+                        .frame(maxWidth: 140)
+                    }
+                }
+            }
             
             TextField(
                 "",
@@ -607,7 +683,7 @@ struct IngredientFormSection: View {
             
             
             //färg på fältbakgrund
-            ForEach(recipe.ingredientArray) { ingredient in
+            ForEach(filteredIngredients) { ingredient in
                 HStack {
                     let rawAmount = ingredient.amountText?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
                     let amountString = rawAmount.isEmpty ? ingredient.amount.cleanString : rawAmount

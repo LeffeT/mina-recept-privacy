@@ -58,7 +58,7 @@
 
 "ingredient" = "Ingredient";
 "amount"     = "Amount";
-"portions"   = "Portions";
+"serves"   = "Serves";
 "unit" = "Unit";
 
 "unit.pcs"   = "pcs";

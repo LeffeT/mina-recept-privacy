@@ -4,6 +4,7 @@
         <attribute name="amount" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
         <attribute name="amountText" optional="YES" attributeType="String"/>
         <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="groupIndex" optional="YES" attributeType="Integer 16" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
         <attribute name="name" optional="YES" attributeType="String"/>
         <attribute name="pluralName" optional="YES" attributeType="String"/>
@@ -14,6 +15,9 @@
     <entity name="Recipe" representedClassName=".Recipe" syncable="YES" codeGenerationType="class">
         <attribute name="baseServings" optional="YES" attributeType="Integer 16" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="date" attributeType="Date" defaultDateTimeInterval="792462720" usesScalarValueType="NO"/>
+        <attribute name="group1Title" optional="YES" attributeType="String"/>
+        <attribute name="group2Title" optional="YES" attributeType="String"/>
+        <attribute name="group3Title" optional="YES" attributeType="String"/>
         <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
         <attribute name="imageFilename" optional="YES" attributeType="String"/>
         <attribute name="instructions" optional="YES" attributeType="String"/>

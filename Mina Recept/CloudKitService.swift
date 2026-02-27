@@ -119,7 +119,8 @@ final class CloudKitService {
                     imageFilename: imageFilename,
                     ingredients: ingredients,
                     expiresAt: expiresAt,
-                    baseServings: max(1, baseServings)
+                    baseServings: max(1, baseServings),
+                    groupTitles: nil
                 )
 
                 if let expiresAt, expiresAt <= Date() {
@@ -279,15 +280,16 @@ final class CloudKitService {
         FileHelper.saveImageData(filename: filename, data: data)
 
         if payload.imageFilename == nil {
-            return PendingRecipePayload(
-                id: payload.id,
-                title: payload.title,
-                instructions: payload.instructions,
-                imageFilename: filename,
-                ingredients: payload.ingredients,
-                expiresAt: payload.expiresAt,
-                baseServings: payload.baseServings
-            )
+                return PendingRecipePayload(
+                    id: payload.id,
+                    title: payload.title,
+                    instructions: payload.instructions,
+                    imageFilename: filename,
+                    ingredients: payload.ingredients,
+                    expiresAt: payload.expiresAt,
+                    baseServings: payload.baseServings,
+                    groupTitles: payload.groupTitles
+                )
         }
 
         return payload
@@ -326,7 +328,8 @@ final class CloudKitService {
                 name: name,
                 amount: amount,
                 amountText: amountString,
-                unit: unit
+                unit: unit,
+                groupIndex: 0
             )
         }
     }

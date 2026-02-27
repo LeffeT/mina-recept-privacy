@@ -39,6 +39,11 @@ enum ImportPayloadHandler {
         recipe.date = Date()
         recipe.imageFilename = payload.imageFilename
         recipe.baseServings = Int16(max(1, payload.baseServings))
+        if let titles = payload.groupTitles {
+            recipe.group1Title = titles.indices.contains(0) ? titles[0] : nil
+            recipe.group2Title = titles.indices.contains(1) ? titles[1] : nil
+            recipe.group3Title = titles.indices.contains(2) ? titles[2] : nil
+        }
 
         // 4 Ingredienser
         for item in payload.ingredients {
@@ -48,6 +53,7 @@ enum ImportPayloadHandler {
             ingredient.amount = item.amount
             ingredient.amountText = item.amountText
             ingredient.unit = item.unit
+            ingredient.groupIndex = Int16(item.groupIndex)
             ingredient.recipe = recipe
         }
 

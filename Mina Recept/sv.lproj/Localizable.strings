@@ -56,7 +56,7 @@
 "add_ingredient" = "Lägg Till Ingredient";
 "ingredient" = "Ingrediens";
 "amount"     = "Mängd";
-"portions"   = "Portioner";
+"serves"   = "Portioner";
 
 
 "unit" = "Enhet";

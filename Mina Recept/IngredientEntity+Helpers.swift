@@ -11,4 +11,5 @@ extension IngredientEntity {
     var safeAmountText: String { amountText ?? "" }
     var safeUnit: String { unit ?? "" }
     var safeName: String { name ?? "" }
+    var safeGroupIndex: Int { Int(groupIndex) }
 }

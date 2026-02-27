@@ -38,6 +38,9 @@ struct PendingRecipePayload: Codable {
 
     /// Antal portioner i originalreceptet
     let baseServings: Int
+    
+    /// Gruppnamn för ingredienser (max 3)
+    let groupTitles: [String]?
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -47,6 +50,7 @@ struct PendingRecipePayload: Codable {
         case ingredients
         case expiresAt
         case baseServings
+        case groupTitles
     }
 
     init(
@@ -56,7 +60,8 @@ struct PendingRecipePayload: Codable {
         imageFilename: String?,
         ingredients: [PendingIngredient],
         expiresAt: Date?,
-        baseServings: Int
+        baseServings: Int,
+        groupTitles: [String]? = nil
     ) {
         self.id = id
         self.title = title
@@ -65,6 +70,7 @@ struct PendingRecipePayload: Codable {
         self.ingredients = ingredients
         self.expiresAt = expiresAt
         self.baseServings = baseServings
+        self.groupTitles = groupTitles
     }
 
     init(from decoder: Decoder) throws {
@@ -76,6 +82,7 @@ struct PendingRecipePayload: Codable {
         ingredients = try container.decode([PendingIngredient].self, forKey: .ingredients)
         expiresAt = try container.decodeIfPresent(Date.self, forKey: .expiresAt)
         baseServings = try container.decodeIfPresent(Int.self, forKey: .baseServings) ?? 1
+        groupTitles = try container.decodeIfPresent([String].self, forKey: .groupTitles)
     }
 }
 
@@ -88,7 +95,8 @@ extension PendingRecipePayload {
             imageFilename: imageFilename,
             ingredients: ingredients,
             expiresAt: date,
-            baseServings: baseServings
+            baseServings: baseServings,
+            groupTitles: groupTitles
         )
     }
 }

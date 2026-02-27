@@ -47,6 +47,10 @@ struct AddRecipeView: View {
     @State private var hasSubmitted = false
     @State private var basePortions: String = "4"
     @State private var ingredientUnit: String = ""
+    @State private var ingredientGroupIndex: Int = 0
+    @State private var groupTitle1: String = ""
+    @State private var groupTitle2: String = ""
+    @State private var groupTitle3: String = ""
   
 
     
@@ -81,6 +85,22 @@ struct AddRecipeView: View {
         self.prefilledTitle = prefilledTitle
         self.prefilledInstructions = prefilledInstructions
         self.prefilledImageURL = prefilledImageURL
+    }
+    
+    private var currentGroupTitle: Binding<String> {
+        switch ingredientGroupIndex {
+        case 1:
+            return $groupTitle2
+        case 2:
+            return $groupTitle3
+        default:
+            return $groupTitle1
+        }
+    }
+    
+    private func normalizedGroupTitle(_ value: String) -> String? {
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
     }
     
     
@@ -198,7 +218,7 @@ struct AddRecipeView: View {
                 .foregroundStyle(themeManager.currentTheme.primaryTextColor)
         
             
-            label(L("portions", languageManager))
+            label(L("serves", languageManager))
             
             TextField(L("portions", languageManager),
                       text: $basePortions,
@@ -212,7 +232,40 @@ struct AddRecipeView: View {
             .tint(themeManager.currentTheme.primaryTextColor)
             
             // INGREDIENT INPUT
-            label(L("ingredients", languageManager))
+            HStack {
+                TextField(
+                    "",
+                    text: currentGroupTitle,
+                    prompt: Text(L("ingredients", languageManager))
+                        .foregroundColor(themeManager.currentTheme.placeholderTextColor)
+                )
+                .textFieldStyle(.plain)
+                .font(.headline)
+                .foregroundColor(themeManager.currentTheme.primaryTextColor)
+
+                Spacer()
+
+                Group {
+                    if themeManager.currentTheme == .white {
+                        Picker("", selection: $ingredientGroupIndex) {
+                            Text("1").tag(0)
+                            Text("2").tag(1)
+                            Text("3").tag(2)
+                        }
+                        .pickerStyle(.segmented)
+                        .frame(maxWidth: 140)
+                        .environment(\.colorScheme, .light)
+                    } else {
+                        Picker("", selection: $ingredientGroupIndex) {
+                            Text("1").tag(0)
+                            Text("2").tag(1)
+                            Text("3").tag(2)
+                        }
+                        .pickerStyle(.segmented)
+                        .frame(maxWidth: 140)
+                    }
+                }
+            }
             
             TextField(
                 "",
@@ -223,7 +276,6 @@ struct AddRecipeView: View {
             .modifier(fieldStyle)
             .foregroundStyle(themeManager.currentTheme.primaryTextColor)
             
-            //.tint(.white)
             
             TextField(
                "",
@@ -232,7 +284,7 @@ struct AddRecipeView: View {
                    .foregroundColor(themeManager.currentTheme.placeholderTextColor)
                 
             )
-            //.keyboardType(.decimalPad)
+
             .keyboardType(.numbersAndPunctuation)
 
 
@@ -342,11 +394,11 @@ struct AddRecipeView: View {
             
             
             IngredientListView(
-                ingredients: tempIngredients,
+                ingredients: tempIngredients.filter { $0.groupIndex == ingredientGroupIndex },
                 themeManager: themeManager,
                 languageManager: languageManager,
                 
-               // scale: 1.0,   // 👈 VIKTIGT
+
                 onDelete: { ing in
                     tempIngredients.removeAll { $0.id == ing.id }
                 }
@@ -382,6 +434,7 @@ struct AddRecipeView: View {
                 amount: value,
                 amountText: ingredientAmount.trimmingCharacters(in: .whitespacesAndNewlines),
                 unit: ingredientUnit,
+                groupIndex: ingredientGroupIndex,
                 scalable: true,
                 pluralName: nil
             )
@@ -405,8 +458,9 @@ struct AddRecipeView: View {
                 new.instructions = instructions
                 new.date = Date()
                 new.baseServings = Int16(portionsValue)
-                //new.baseServings = 1
-                
+                new.group1Title = normalizedGroupTitle(groupTitle1)
+                new.group2Title = normalizedGroupTitle(groupTitle2)
+                new.group3Title = normalizedGroupTitle(groupTitle3)
                 
                 for temp in tempIngredients {
                     let ing = IngredientEntity(context: context)
@@ -417,6 +471,7 @@ struct AddRecipeView: View {
                     ing.unit = temp.unit
                     ing.scalable = temp.scalable
                     ing.pluralName = temp.pluralName
+                    ing.groupIndex = Int16(temp.groupIndex)
                     ing.recipe = new
                     
                 }
@@ -448,6 +503,9 @@ struct AddRecipeView: View {
             private func onAppearLoad() {
                 if let prefilledTitle, title.isEmpty { title = prefilledTitle }
                 if let prefilledInstructions, instructions.isEmpty { instructions = prefilledInstructions }
+                if groupTitle1.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    groupTitle1 = L("ingredients", languageManager)
+                }
                 
                 if let url = prefilledImageURL {
                     loadImageFromURL(url)
@@ -517,6 +575,7 @@ struct AddRecipeView: View {
             let amount: Double
             let amountText: String?
             let unit: String
+            let groupIndex: Int
             let scalable: Bool
             let pluralName: String?
         }
