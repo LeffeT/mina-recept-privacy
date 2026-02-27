@@ -24,6 +24,10 @@ struct AddRecipeView: View {
     @Environment(\.managedObjectContext) private var context
     @EnvironmentObject var themeManager: ThemeManager
     @EnvironmentObject var theme: ThemeManager
+    @EnvironmentObject var purchaseManager: PurchaseManager
+
+    @FetchRequest(sortDescriptors: [])
+    private var recipes: FetchedResults<Recipe>
     
     
     @StateObject private var languageManager = LanguageManager.shared
@@ -51,6 +55,7 @@ struct AddRecipeView: View {
     @State private var groupTitle1: String = ""
     @State private var groupTitle2: String = ""
     @State private var groupTitle3: String = ""
+    @State private var showPaywall = false
   
 
     
@@ -75,6 +80,11 @@ struct AddRecipeView: View {
     
     var portionsValue: Int {
         max(Int(basePortions) ?? 1, 1)
+    }
+
+    private var isLocked: Bool {
+        !purchaseManager.hasUnlimited &&
+        recipes.count >= PurchaseManager.freeRecipeLimit
     }
     
     init(
@@ -122,6 +132,12 @@ struct AddRecipeView: View {
             }
         }
         .onAppear(perform: onAppearLoad)
+        .sheet(isPresented: $showPaywall) {
+            PaywallView(
+                freeLimit: PurchaseManager.freeRecipeLimit,
+                currentCount: recipes.count
+            )
+        }
         .fullScreenCover(isPresented: $showCamera) {
             ImagePicker(source: .camera) { image in
                 pickedImage = image
@@ -193,6 +209,10 @@ struct AddRecipeView: View {
                 text: L("save", languageManager),
                 isDisabled: title.isEmpty
             ) {
+                if isLocked {
+                    showPaywall = true
+                    return
+                }
                 saveRecipe()
             }
         }

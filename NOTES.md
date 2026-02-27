@@ -59,3 +59,4 @@
 - `RecipeDetailView` visar ingredienser per kategori i swipe‑vy (TabView) med egna dots och dynamisk höjd.
 - “Gör så här” flyttad i Edit‑vyn så rubriken ligger precis ovanför instruktionstexten.
 - Segment‑numren (1–3) i vitt tema tvingas till svart text.
+- IAP‑stöd: 3 gratis recept, paywall och upplåsning via StoreKit 2 (non‑consumable).

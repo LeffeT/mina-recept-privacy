@@ -20,6 +20,7 @@ struct HomeView: View {
     @Environment(\.managedObjectContext) private var context
     @EnvironmentObject var themeManager: ThemeManager
     @EnvironmentObject var languageManager: LanguageManager
+    @EnvironmentObject var purchaseManager: PurchaseManager
 
 
     // 🔤 Sortera recept A–Ö via normaliserad sortTitle
@@ -31,6 +32,12 @@ struct HomeView: View {
     private var recipes: FetchedResults<Recipe>
 
     @State private var showingAdd = false
+    @State private var showingPaywall = false
+
+    private var isLocked: Bool {
+        !purchaseManager.hasUnlimited &&
+        recipes.count >= PurchaseManager.freeRecipeLimit
+    }
     
     
     func fixBaseServings(
@@ -109,7 +116,11 @@ struct HomeView: View {
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Button {
-                        showingAdd = true
+                        if isLocked {
+                            showingPaywall = true
+                        } else {
+                            showingAdd = true
+                        }
                     } label: {
                         Image(systemName: "plus")
                             .foregroundColor(
@@ -120,6 +131,12 @@ struct HomeView: View {
             }
             .sheet(isPresented: $showingAdd) {
                 AddRecipeView()
+            }
+            .sheet(isPresented: $showingPaywall) {
+                PaywallView(
+                    freeLimit: PurchaseManager.freeRecipeLimit,
+                    currentCount: recipes.count
+                )
             }
             // 🔧 Kör EN GÅNG för att fylla sortTitle på gamla recept
             .onAppear {

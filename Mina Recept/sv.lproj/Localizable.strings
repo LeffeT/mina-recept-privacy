@@ -61,6 +61,12 @@
 
 "unit" = "Enhet";
 
+"unlock_title" = "Lås upp obegränsat";
+"unlock_message" = "Du kan skapa %d recept gratis. Köp för obegränsat antal.";
+"unlock_cta" = "Lås upp";
+"restore_purchases" = "Återställ köp";
+"purchase_failed" = "Köpet misslyckades. Försök igen.";
+
 "unit.pcs"   = "st";
 "unit.g"     = "g";
 "unit.kg"    = "kg";

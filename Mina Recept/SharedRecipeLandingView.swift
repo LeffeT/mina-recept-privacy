@@ -7,10 +7,15 @@
 
 
 import SwiftUI
+import CoreData
 
 struct SharedRecipeLandingView: View {
     
     @EnvironmentObject var languageManager: LanguageManager
+    @EnvironmentObject var purchaseManager: PurchaseManager
+
+    @FetchRequest(sortDescriptors: [])
+    private var recipes: FetchedResults<Recipe>
 
     let recipeID: String
 
@@ -22,6 +27,12 @@ struct SharedRecipeLandingView: View {
     @State private var isImporting = false
     @State private var errorMessage: String?
     @State private var showSuccess = false
+    @State private var showPaywall = false
+
+    private var isLocked: Bool {
+        !purchaseManager.hasUnlimited &&
+        recipes.count >= PurchaseManager.freeRecipeLimit
+    }
 
     var body: some View {
         ZStack {
@@ -71,6 +82,10 @@ struct SharedRecipeLandingView: View {
                     .buttonStyle(.bordered)
 
                     Button(L("import", languageManager)) {
+                        if isLocked {
+                            showPaywall = true
+                            return
+                        }
                         importRecipe()
                     }
                     .frame(maxWidth: .infinity)
@@ -84,6 +99,12 @@ struct SharedRecipeLandingView: View {
                     .fill(Color(.systemBackground))
             )
             .padding(30)
+        }
+        .sheet(isPresented: $showPaywall) {
+            PaywallView(
+                freeLimit: PurchaseManager.freeRecipeLimit,
+                currentCount: recipes.count
+            )
         }
     }
 

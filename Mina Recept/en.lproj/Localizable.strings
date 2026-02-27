@@ -61,6 +61,12 @@
 "serves"   = "Serves";
 "unit" = "Unit";
 
+"unlock_title" = "Unlock unlimited recipes";
+"unlock_message" = "You can create %d recipes for free. Buy to create unlimited.";
+"unlock_cta" = "Unlock";
+"restore_purchases" = "Restore purchases";
+"purchase_failed" = "Purchase failed. Try again.";
+
 "unit.pcs"   = "pcs";
 "unit.g"     = "g";
 "unit.kg"    = "kg";

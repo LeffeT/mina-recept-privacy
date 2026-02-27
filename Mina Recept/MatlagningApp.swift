@@ -47,6 +47,7 @@ struct MatlagningApp: App {
     // 🔗 Deep link manager
     @StateObject private var deepLinkManager = DeepLinkManager()
     @StateObject private var cloudSyncStatus = CloudSyncStatus()
+    @StateObject private var purchaseManager = PurchaseManager()
 
     // 💾 Core Data – EN källa
     let container = CoreDataStack.shared
@@ -66,6 +67,7 @@ struct MatlagningApp: App {
             .environmentObject(languageManager)   // ✅ VIKTIG RAD
             .environmentObject(deepLinkManager)
             .environmentObject(cloudSyncStatus)
+            .environmentObject(purchaseManager)
 
             // 📬 Tar emot deep links
             .onOpenURL { url in
