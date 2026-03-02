@@ -57,6 +57,12 @@ struct MatlagningApp: App {
          
             NavigationStack {
                 StartView()
+                    .task {
+                        DemoRecipeSeeder.seedIfNeeded(
+                            context: container.viewContext,
+                            languageManager: languageManager
+                        )
+                    }
             }
             // 🌍 Environment
             .environment(

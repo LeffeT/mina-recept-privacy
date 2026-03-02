@@ -13,6 +13,7 @@ struct StartView: View {
  
 
 
+    @Environment(\.managedObjectContext) private var context
     @EnvironmentObject var themeManager: ThemeManager
     @EnvironmentObject var languageManager: LanguageManager
     @EnvironmentObject var cloudSyncStatus: CloudSyncStatus
@@ -238,6 +239,12 @@ struct StartView: View {
                 .toolbar(.hidden, for: .navigationBar)   // 🔑 TAR BORT RESERVERAD YTA
                         .navigationBarTitleDisplayMode(.inline)
             
+        }
+        .onChange(of: languageManager.selectedLanguage) { _, _ in
+            DemoRecipeSeeder.seedIfNeeded(
+                context: context,
+                languageManager: languageManager
+            )
         }
     }
 }
