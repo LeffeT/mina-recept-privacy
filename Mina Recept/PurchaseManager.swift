@@ -6,12 +6,14 @@
 //
 
 import Foundation
+import Combine
 import StoreKit
+import os
 
 @MainActor
 final class PurchaseManager: ObservableObject {
-    static let unlimitedProductID = "se.leiftarvainen.minarecept.unlimited"
-    static let freeRecipeLimit = 3
+    nonisolated static let unlimitedProductID = "se.leiftarvainen.minarecept.unlimited"
+    nonisolated static let freeRecipeLimit = 3
 
     private let entitlementKey = "iap_unlimited_unlocked"
 

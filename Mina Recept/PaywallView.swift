@@ -61,30 +61,27 @@ struct PaywallView: View {
                 Button {
                     Task { await handlePurchase() }
                 } label: {
-                    Text(L("unlock_cta", languageManager))
-                        .font(.headline)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
-                        .background(themeManager.currentTheme.buttonBackground)
-                        .clipShape(RoundedRectangle(cornerRadius: 14))
+                    paywallButtonLabel(L("unlock_cta", languageManager))
+                        .padding(.vertical, 8)
+                        .contentShape(RoundedRectangle(cornerRadius: 14))
                 }
-                .disabled(isPurchasing || product == nil)
+                .disabled(isPurchasing)
 
                 Button {
-                    Task {
-                        await purchaseManager.restore()
-                    }
+                    Task { await purchaseManager.restore() }
                 } label: {
-                    Text(L("restore_purchases", languageManager))
-                        .font(.subheadline)
+                    paywallButtonLabel(L("restore_purchases", languageManager))
+                        .padding(.vertical, 8)
+                        .contentShape(RoundedRectangle(cornerRadius: 14))
                 }
-                .foregroundStyle(themeManager.currentTheme.primaryTextColor.opacity(0.85))
 
-                Button(L("close", languageManager)) {
+                Button {
                     dismiss()
+                } label: {
+                    paywallButtonLabel(L("close", languageManager))
+                        .padding(.vertical, 8)
+                        .contentShape(RoundedRectangle(cornerRadius: 14))
                 }
-                .font(.subheadline)
-                .foregroundStyle(themeManager.currentTheme.primaryTextColor.opacity(0.7))
             }
             .padding(24)
             .background(
@@ -108,9 +105,23 @@ struct PaywallView: View {
         isPurchasing = true
         defer { isPurchasing = false }
 
+        guard product != nil else {
+            errorMessage = L("price_unavailable", languageManager)
+            await purchaseManager.loadProducts()
+            return
+        }
+
         let success = await purchaseManager.purchase()
         if !success && !purchaseManager.hasUnlimited {
             errorMessage = L("purchase_failed", languageManager)
         }
+    }
+
+    private func paywallButtonLabel(_ title: String) -> some View {
+        Text(title)
+            .font(.headline)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 12)
+            .foregroundColor(themeManager.currentTheme.primaryTextColor)
     }
 }

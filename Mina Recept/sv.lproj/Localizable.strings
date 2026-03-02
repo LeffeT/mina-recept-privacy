@@ -66,6 +66,7 @@
 "unlock_cta" = "Lås upp";
 "restore_purchases" = "Återställ köp";
 "purchase_failed" = "Köpet misslyckades. Försök igen.";
+"price_unavailable" = "Priset är inte klart ännu. Försök igen om en stund.";
 
 "unit.pcs"   = "st";
 "unit.g"     = "g";
