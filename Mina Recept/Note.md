@@ -1,0 +1,1 @@
+- 2026-03-06: Flyttade demo-seed/flush/cleanup från launch till HomeView för snabbare start. Säkerställde att SharedRecipeLandingView får managedObjectContext, PurchaseManager, ThemeManager och LanguageManager så delade recept fungerar igen.

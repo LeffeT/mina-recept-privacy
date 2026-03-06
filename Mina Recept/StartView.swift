@@ -16,6 +16,7 @@ struct StartView: View {
     @EnvironmentObject var themeManager: ThemeManager
     @EnvironmentObject var languageManager: LanguageManager
     @EnvironmentObject var cloudSyncStatus: CloudSyncStatus
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
 
 
     @State private var goToHome = false
@@ -58,16 +59,6 @@ struct StartView: View {
                 ? themeManager.currentTheme.accentColor
                 : .green
         }
-    }
-
-    private var lastSyncText: String? {
-        guard let date = cloudSyncStatus.lastSyncDate else { return nil }
-        let formatter = DateFormatter()
-        formatter.locale = languageManager.locale
-        formatter.timeStyle = .short
-        formatter.dateStyle = .none
-        let time = formatter.string(from: date)
-        return String(format: L("icloud_last_sync", languageManager), time)
     }
 
     private func scheduleICloudRefreshIfNeeded() {
@@ -115,7 +106,9 @@ struct StartView: View {
                     
                         .font(.headline)
                         .foregroundColor(themeManager.currentTheme.primaryTextColor)
-                        .frame(maxWidth: .infinity)
+                        .frame(
+                            maxWidth: verticalSizeClass == .compact ? 420 : .infinity
+                        )
                         .frame(height: 52)
                         .background(
                             RoundedRectangle(cornerRadius: 24)
@@ -167,27 +160,20 @@ struct StartView: View {
                 .buttonStyle(.plain)
 
                 // =========================
-                // ICLOUD STATUS
+                // ICLOUD WARNING (ONLY WHEN NEEDED)
                 // =========================
-                HStack(spacing: 8) {
-                    Circle()
-                        .fill(iCloudStatusColor)
-                        .frame(width: 8, height: 8)
-                    Text(iCloudStatusText)
-                        .font(.footnote)
-                        .foregroundColor(
-                            themeManager.currentTheme.primaryTextColor.opacity(0.7)
-                        )
-                }
-                .padding(.top, 12)
-
-                if let lastSyncText {
-                    Text(lastSyncText)
-                        .font(.caption)
-                        .foregroundColor(
-                            themeManager.currentTheme.primaryTextColor.opacity(0.55)
-                        )
-                        .padding(.top, 2)
+                if cloudSyncStatus.state == .unavailable || cloudSyncStatus.state == .error {
+                    HStack(spacing: 8) {
+                        Circle()
+                            .fill(iCloudStatusColor)
+                            .frame(width: 8, height: 8)
+                        Text(iCloudStatusText)
+                            .font(.footnote)
+                            .foregroundColor(
+                                themeManager.currentTheme.primaryTextColor.opacity(0.7)
+                            )
+                    }
+                    .padding(.top, 12)
                 }
                 
                 // =========================
