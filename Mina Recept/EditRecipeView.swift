@@ -27,6 +27,8 @@ struct EditRecipeView: View {
     @State private var servings: Int = 1
     @State private var pickedItem: PhotosPickerItem?
     @State private var pickedImage: UIImage?
+    @State private var didPickNewImage = false
+    @State private var originalImageFilename: String?
     @State private var showCamera = false
     @State private var ingredient = ""
     @State private var ingredientName: String = ""
@@ -340,10 +342,13 @@ struct EditRecipeView: View {
             if let filename = recipe.imageFilename {
                 pickedImage = FileHelper.loadImage(filename: filename)
             }
+            originalImageFilename = recipe.imageFilename
+            didPickNewImage = false
         }
         .fullScreenCover(isPresented: $showCamera) {
             ImagePicker(source: .camera) { image in
                 pickedImage = image
+                didPickNewImage = true
                 showCamera = false
             }
         }
@@ -353,18 +358,12 @@ struct EditRecipeView: View {
                 if let data = try? await newItem.loadTransferable(type: Data.self),
                    let image = UIImage(data: data) {
                     pickedImage = image
+                    didPickNewImage = true
                 }
             }
         }
     }// Här Stängs body <----
- 
-   
     
-    //private func loadIngredientForEdit(_ ingredient: IngredientEntity) {
-     //   ingredientName = ingredient.name ?? ""
-     //   ingredientAmount = ingredient.amount.cleanString
-    //    ingredientUnit = unitKey(fromLocalized: ingredient.unit ?? "")
-// }
     // MARK: - UI helpers (orörda)
     
     private func iconButton(
@@ -462,7 +461,7 @@ struct EditRecipeView: View {
         recipe.group2Title = normalizedGroupTitle(groupTitle2)
         recipe.group3Title = normalizedGroupTitle(groupTitle3)
         
-        if let img = pickedImage {
+        if didPickNewImage, let img = pickedImage {
             let finalImage = img.normalizedAndResized(
                 maxWidth: 1200,
                 maxHeight: 1200
@@ -470,15 +469,30 @@ struct EditRecipeView: View {
             
             if let data = finalImage.jpegData(compressionQuality: 0.85) {
                 let name = UUID().uuidString + ".jpg"
-                FileHelper.saveImageData(filename: name, data: data)
-                recipe.imageFilename = name
+                if FileHelper.saveImageData(filename: name, data: data) {
+                    let oldFilename = recipe.imageFilename
+                    recipe.imageFilename = name
+                    originalImageFilename = oldFilename
+                } else {
+                    didPickNewImage = false
+                }
             }
         }
         
         do {
             try context.save()
+            if let oldFilename = originalImageFilename,
+               oldFilename != recipe.imageFilename {
+                FileHelper.deleteImage(filename: oldFilename)
+            }
             dismiss()
         } catch {
+            if let filename = recipe.imageFilename,
+               filename != originalImageFilename,
+               didPickNewImage {
+                FileHelper.deleteImage(filename: filename)
+                recipe.imageFilename = originalImageFilename
+            }
             AppLog.storage.error("Kunde inte spara: \(error.localizedDescription, privacy: .public)")
         }
         

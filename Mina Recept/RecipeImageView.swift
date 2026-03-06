@@ -17,6 +17,7 @@ import SwiftUI
 
 struct RecipeImageView: View {
 
+    @EnvironmentObject var themeManager: ThemeManager
     let image: UIImage?
     let noImageText: String
 
@@ -37,7 +38,7 @@ struct RecipeImageView: View {
 
             ZStack {
                 RoundedRectangle(cornerRadius: 18)
-                    .fill(Color.primary.opacity(0.08))
+                    .fill(themeManager.currentTheme.buttonBackground.opacity(0.6))
                     .frame(width: imageWidth, height: imageHeight)
 
                 if let image {
@@ -54,7 +55,9 @@ struct RecipeImageView: View {
                         Text(noImageText)
                             .font(.caption)
                     }
-                    .foregroundColor(.secondary)
+                    .foregroundColor(
+                        themeManager.currentTheme.primaryTextColor.opacity(0.6)
+                    )
                 }
             }
             .frame(maxWidth: .infinity)

@@ -208,7 +208,7 @@ struct StartView: View {
                 L("icloud_required_title", languageManager),
                 isPresented: $showICloudAlert
             ) {
-                Button(L("open_settings", languageManager)) {
+                Button(L("icloud_open_settings", languageManager)) {
                     if let url = URL(string: UIApplication.openSettingsURLString) {
                         UIApplication.shared.open(url)
                     }

@@ -106,6 +106,18 @@
 "icloud_last_sync" = "Last synced: %@";
 
 "icloud_required_title" = "iCloud required";
-"icloud_required_message" = "To share recipes, iCloud Drive must be enabled
-and My Recipes Collection turned on in iCloud.";
+"icloud_required_message" = "To share recipes, iCloud Drive must be enabled.
+Open Settings → [your name] → iCloud → iCloud Drive (On) → Show All → My Recipes Collection (On).";
 "icloud_open_settings" = "Open app settings";
+
+"storage_section_title" = "Storage";
+"storage_section_subtitle" = "Images in iCloud and on device.";
+"storage_images_total" = "Images: %d";
+"storage_icloud_line" = "iCloud: %@ • %d";
+"storage_local_line" = "Local: %@ • %d";
+"storage_cleanup_button" = "Clean up unused images";
+"storage_cleanup_confirm_title" = "Clean up images?";
+"storage_cleanup_confirm_message" = "This only removes unused images from My Recipes Collection and will not affect other iCloud files.";
+"storage_cleanup_confirm_action" = "Clean up";
+"storage_cleanup_none" = "No unused images found.";
+"storage_cleanup_done" = "Removed %d iCloud and %d local images (%@ freed).";

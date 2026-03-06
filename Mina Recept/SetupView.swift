@@ -7,13 +7,25 @@
 
 
 import SwiftUI
+import CoreData
 
 struct SetupView: View {
 
     @EnvironmentObject var themeManager: ThemeManager
     @EnvironmentObject var languageManager: LanguageManager
     @EnvironmentObject var cloudSyncStatus: CloudSyncStatus
+    @Environment(\.managedObjectContext) private var context
     @Environment(\.dismiss) private var dismiss
+
+    @State private var storageReport = FileHelper.ImageStorageReport.empty
+    private enum CleanupSummary {
+        case none
+        case done(iCloud: Int, local: Int, freedBytes: Int64)
+    }
+
+    @State private var cleanupSummary: CleanupSummary?
+    @State private var isCleaning = false
+    @State private var showCleanupConfirm = false
     
     private var versionText: String {
         let version = Bundle.main.object(
@@ -161,6 +173,57 @@ struct SetupView: View {
                         .font(.footnote)
                         .foregroundColor(themeManager.currentTheme.primaryTextColor)
                     }
+
+                    SettingsSection(
+                        title: L("storage_section_title", languageManager),
+                        subtitle: L("storage_section_subtitle", languageManager),
+                        theme: themeManager.currentTheme
+                    ) {
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text(String(
+                                format: L("storage_images_total", languageManager),
+                                storageReport.totalCount
+                            ))
+
+                            Text(String(
+                                format: L("storage_icloud_line", languageManager),
+                                formatBytes(storageReport.iCloudBytes),
+                                storageReport.iCloudCount
+                            ))
+
+                            Text(String(
+                                format: L("storage_local_line", languageManager),
+                                formatBytes(storageReport.localBytes),
+                                storageReport.localCount
+                            ))
+
+                            Button {
+                                showCleanupConfirm = true
+                            } label: {
+                                Text(L("storage_cleanup_button", languageManager))
+                                    .font(.footnote.weight(.semibold))
+                                    .foregroundColor(themeManager.currentTheme.primaryTextColor)
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 44)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .fill(themeManager.currentTheme.buttonBackground)
+                                    )
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(isCleaning)
+
+                            if let cleanupSummaryText {
+                                Text(cleanupSummaryText)
+                                    .font(.caption)
+                                    .foregroundColor(
+                                        themeManager.currentTheme.primaryTextColor.opacity(0.7)
+                                    )
+                            }
+                        }
+                        .font(.footnote)
+                        .foregroundColor(themeManager.currentTheme.primaryTextColor)
+                    }
                     
                     Button {
                         dismiss()
@@ -182,6 +245,20 @@ struct SetupView: View {
                 .padding(.bottom, 24)
             }
         }
+        .onAppear {
+            refreshStorageReport()
+        }
+        .alert(
+            L("storage_cleanup_confirm_title", languageManager),
+            isPresented: $showCleanupConfirm
+        ) {
+            Button(L("storage_cleanup_confirm_action", languageManager)) {
+                cleanupOrphanedImages()
+            }
+            Button(L("cancel", languageManager), role: .cancel) {}
+        } message: {
+            Text(L("storage_cleanup_confirm_message", languageManager))
+        }
     }
 
     private func themeTitle(for theme: AppTheme) -> String {
@@ -200,6 +277,74 @@ struct SetupView: View {
             return L("theme_name_pink", languageManager)
         case .red:
             return L("theme_name_red", languageManager)
+        }
+    }
+
+    private func refreshStorageReport() {
+        DispatchQueue.global(qos: .utility).async {
+            let report = FileHelper.imageStorageReport()
+            DispatchQueue.main.async {
+                storageReport = report
+            }
+        }
+    }
+
+    private func cleanupOrphanedImages() {
+        guard !isCleaning else { return }
+        isCleaning = true
+        cleanupSummary = nil
+
+        let referencedFilenames = fetchReferencedImageFilenames()
+
+        DispatchQueue.global(qos: .utility).async {
+            let result = FileHelper.cleanupOrphanedImages(
+                referencedFilenames: referencedFilenames
+            )
+            let report = FileHelper.imageStorageReport()
+
+            DispatchQueue.main.async {
+                storageReport = report
+                isCleaning = false
+                if result.totalRemoved == 0 {
+                    cleanupSummary = CleanupSummary.none
+                } else {
+                    cleanupSummary = .done(
+                        iCloud: result.iCloudRemoved,
+                        local: result.localRemoved,
+                        freedBytes: result.totalBytesRemoved
+                    )
+                }
+            }
+        }
+    }
+
+    private func fetchReferencedImageFilenames() -> Set<String> {
+        let request: NSFetchRequest<Recipe> = Recipe.fetchRequest()
+        request.includesPendingChanges = true
+        let recipes = (try? context.fetch(request)) ?? []
+        return Set(recipes.compactMap { $0.imageFilename })
+    }
+
+    private func formatBytes(_ bytes: Int64) -> String {
+        ByteCountFormatter.string(
+            fromByteCount: bytes,
+            countStyle: .file
+        )
+    }
+
+    private var cleanupSummaryText: String? {
+        guard let cleanupSummary else { return nil }
+        switch cleanupSummary {
+        case .none:
+            return L("storage_cleanup_none", languageManager)
+        case .done(let iCloud, let local, let freedBytes):
+            let freedText = formatBytes(freedBytes)
+            return String(
+                format: L("storage_cleanup_done", languageManager),
+                iCloud,
+                local,
+                freedText
+            )
         }
     }
 }
