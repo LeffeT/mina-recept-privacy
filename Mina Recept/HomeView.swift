@@ -12,6 +12,7 @@
 //
 
 import SwiftUI
+import Foundation
 import CoreData
 import os
 
@@ -20,6 +21,7 @@ struct HomeView: View {
     @Environment(\.managedObjectContext) private var context
     @EnvironmentObject var themeManager: ThemeManager
     @EnvironmentObject var languageManager: LanguageManager
+    @EnvironmentObject var cloudSyncStatus: CloudSyncStatus
     @EnvironmentObject var purchaseManager: PurchaseManager
 
 
@@ -33,6 +35,7 @@ struct HomeView: View {
 
     @State private var showingAdd = false
     @State private var showingPaywall = false
+    @State private var didScheduleBackgroundTasks = false
 
     private var isLocked: Bool {
         !purchaseManager.hasUnlimited &&
@@ -144,6 +147,17 @@ struct HomeView: View {
                 AppLog.ui.debug("HomeView visas")
               #endif
                 backfillSortTitlesIfNeeded()
+                scheduleBackgroundTasksIfNeeded()
+            }
+            .onChange(of: cloudSyncStatus.state) { _, newValue in
+                guard newValue == .idle else { return }
+                flushPendingImagesIfPossible()
+            }
+            .onChange(of: languageManager.selectedLanguage) { _, _ in
+                DemoRecipeSeeder.seedIfNeeded(
+                    container: CoreDataStack.shared.container,
+                    languageManager: languageManager
+                )
             }
         }
     }
@@ -166,6 +180,31 @@ struct HomeView: View {
 
         if didChange {
             try? context.save()
+        }
+    }
+
+    private func scheduleBackgroundTasksIfNeeded() {
+        guard !didScheduleBackgroundTasks else { return }
+        didScheduleBackgroundTasks = true
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+            DemoRecipeSeeder.seedIfNeeded(
+                container: CoreDataStack.shared.container,
+                languageManager: languageManager
+            )
+        }
+
+        flushPendingImagesIfPossible()
+
+        DispatchQueue.global(qos: .background).asyncAfter(deadline: .now() + 2.0) {
+            CloudKitService.shared.cleanupExpiredSharesForCurrentUser()
+        }
+    }
+
+    private func flushPendingImagesIfPossible() {
+        guard FileManager.default.ubiquityIdentityToken != nil else { return }
+        DispatchQueue.global(qos: .utility).async {
+            FileHelper.flushPendingImagesIfPossible()
         }
     }
 

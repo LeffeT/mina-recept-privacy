@@ -13,7 +13,6 @@ struct StartView: View {
  
 
 
-    @Environment(\.managedObjectContext) private var context
     @EnvironmentObject var themeManager: ThemeManager
     @EnvironmentObject var languageManager: LanguageManager
     @EnvironmentObject var cloudSyncStatus: CloudSyncStatus
@@ -23,6 +22,7 @@ struct StartView: View {
     @State private var showSetup = false
     @State private var isPressing = false
     @State private var showICloudAlert = false
+    @State private var didScheduleICloudRefresh = false
 
     
     private func isICloudAvailable() -> Bool {
@@ -68,6 +68,14 @@ struct StartView: View {
         formatter.dateStyle = .none
         let time = formatter.string(from: date)
         return String(format: L("icloud_last_sync", languageManager), time)
+    }
+
+    private func scheduleICloudRefreshIfNeeded() {
+        guard !didScheduleICloudRefresh else { return }
+        didScheduleICloudRefresh = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+            cloudSyncStatus.refresh()
+        }
     }
 
 
@@ -208,7 +216,7 @@ struct StartView: View {
                 if !isICloudAvailable() {
                     showICloudAlert = true
                 }
-                cloudSyncStatus.refresh()
+                scheduleICloudRefreshIfNeeded()
             }
             .alert(
                 L("icloud_required_title", languageManager),
@@ -239,12 +247,6 @@ struct StartView: View {
                 .toolbar(.hidden, for: .navigationBar)   // 🔑 TAR BORT RESERVERAD YTA
                         .navigationBarTitleDisplayMode(.inline)
             
-        }
-        .onChange(of: languageManager.selectedLanguage) { _, _ in
-            DemoRecipeSeeder.seedIfNeeded(
-                context: context,
-                languageManager: languageManager
-            )
         }
     }
 }

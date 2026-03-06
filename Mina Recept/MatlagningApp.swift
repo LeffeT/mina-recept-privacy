@@ -19,20 +19,6 @@ import os
 
 @main
 struct MatlagningApp: App {
-    
-    
-    
-    init() {
-        if let url = FileManager.default.url(forUbiquityContainerIdentifier: "iCloud.se.leiftarvainen.minarecept") {
-            AppLog.cloudkit.info("iCloud container: \(url.path, privacy: .private)")
-        } else {
-            AppLog.cloudkit.error("iCloud container not available")
-        }
-
-        CloudKitService.shared.cleanupExpiredSharesForCurrentUser()
-    }
-
- 
     @State private var presentedRecipeID: String?
 
     @UIApplicationDelegateAdaptor(AppDelegate.self)
@@ -57,12 +43,6 @@ struct MatlagningApp: App {
          
             NavigationStack {
                 StartView()
-                    .task {
-                        DemoRecipeSeeder.seedIfNeeded(
-                            context: container.viewContext,
-                            languageManager: languageManager
-                        )
-                    }
             }
             // 🌍 Environment
             .environment(
@@ -101,7 +81,10 @@ struct MatlagningApp: App {
             ) {
                 if let recipeID = presentedRecipeID {
                     SharedRecipeLandingView(recipeID: recipeID)
+                        .environment(\.managedObjectContext, container.viewContext)
+                        .environmentObject(themeManager)
                         .environmentObject(languageManager)
+                        .environmentObject(purchaseManager)
             #if DEBUG
                         .onAppear {
                             AppLog.share.debug("Presenting SharedRecipeLandingView for recipeID: \(recipeID, privacy: .public)")
