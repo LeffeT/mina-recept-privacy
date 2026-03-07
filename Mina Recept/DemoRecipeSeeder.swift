@@ -13,6 +13,7 @@ import UIKit
 enum DemoRecipeSeeder {
     private static let didSeedKey = "did_seed_demo_recipe_v1"
     private static let demoRecipeIDKey = "demo_recipe_id"
+    private static let groupedDemoRecipeIDKey = "grouped_demo_recipe_id"
     private static let demoLanguageKey = "demo_recipe_language"
     private static let demoImageName = "demo_pancakes"
 
@@ -41,9 +42,19 @@ enum DemoRecipeSeeder {
         let defaults = UserDefaults.standard
         let desiredLanguage = resolvedLanguage(from: selectedLanguage)
         let didSeed = defaults.bool(forKey: didSeedKey)
-        let demoIDString = defaults.string(forKey: demoRecipeIDKey)
         let currentLangRaw = defaults.string(forKey: demoLanguageKey)
         let currentLang = AppLanguage(rawValue: currentLangRaw ?? "") ?? desiredLanguage
+
+        var primaryDemoID = validDemoID(
+            from: defaults.string(forKey: demoRecipeIDKey),
+            key: demoRecipeIDKey,
+            defaults: defaults
+        )
+        var groupedDemoID = validDemoID(
+            from: defaults.string(forKey: groupedDemoRecipeIDKey),
+            key: groupedDemoRecipeIDKey,
+            defaults: defaults
+        )
 
         let request: NSFetchRequest<Recipe> = Recipe.fetchRequest()
         request.includesPendingChanges = true
@@ -54,45 +65,100 @@ enum DemoRecipeSeeder {
                 defaults.set(true, forKey: didSeedKey)
                 return
             }
-            createDemo(
+            let demos = demoRecipes(for: desiredLanguage)
+            primaryDemoID = createDemo(
                 in: context,
                 locale: locale,
-                language: desiredLanguage
+                language: desiredLanguage,
+                data: demos.primary
+            )
+            groupedDemoID = createDemo(
+                in: context,
+                locale: locale,
+                language: desiredLanguage,
+                data: demos.grouped
+            )
+            persistDemoState(
+                defaults: defaults,
+                language: desiredLanguage,
+                primaryDemoID: primaryDemoID,
+                groupedDemoID: groupedDemoID
             )
             return
         }
 
-        guard let demoIDString else { return }
-        guard let demoID = UUID(uuidString: demoIDString) else {
-            defaults.removeObject(forKey: demoRecipeIDKey)
-            defaults.removeObject(forKey: demoLanguageKey)
+        // Existing users with their own recipes should not suddenly get demo recipes.
+        guard primaryDemoID != nil || groupedDemoID != nil else {
             return
         }
 
-        if let demoRecipe = fetchRecipe(id: demoID, context: context) {
-            if currentLang != desiredLanguage {
-                context.delete(demoRecipe)
-                createDemo(
-                    in: context,
-                    locale: locale,
-                    language: desiredLanguage
-                )
-            } else {
-                attachImageIfNeeded(to: demoRecipe, context: context)
-            }
-        } else {
-            defaults.removeObject(forKey: demoRecipeIDKey)
-            defaults.removeObject(forKey: demoLanguageKey)
+        let demos = demoRecipes(for: desiredLanguage)
+
+        if currentLang != desiredLanguage {
+            deleteDemoRecipeIfExists(id: primaryDemoID, context: context)
+            deleteDemoRecipeIfExists(id: groupedDemoID, context: context)
+
+            primaryDemoID = createDemo(
+                in: context,
+                locale: locale,
+                language: desiredLanguage,
+                data: demos.primary
+            )
+            groupedDemoID = createDemo(
+                in: context,
+                locale: locale,
+                language: desiredLanguage,
+                data: demos.grouped
+            )
+
+            persistDemoState(
+                defaults: defaults,
+                language: desiredLanguage,
+                primaryDemoID: primaryDemoID,
+                groupedDemoID: groupedDemoID
+            )
+            return
         }
+
+        if let id = primaryDemoID,
+           let demoRecipe = fetchRecipe(id: id, context: context) {
+            attachImageIfNeeded(to: demoRecipe, context: context)
+        } else {
+            primaryDemoID = createDemo(
+                in: context,
+                locale: locale,
+                language: desiredLanguage,
+                data: demos.primary
+            )
+        }
+
+        if let id = groupedDemoID,
+           let groupedDemo = fetchRecipe(id: id, context: context) {
+            attachImageIfNeeded(to: groupedDemo, context: context)
+        } else {
+            groupedDemoID = createDemo(
+                in: context,
+                locale: locale,
+                language: desiredLanguage,
+                data: demos.grouped
+            )
+        }
+
+        persistDemoState(
+            defaults: defaults,
+            language: desiredLanguage,
+            primaryDemoID: primaryDemoID,
+            groupedDemoID: groupedDemoID
+        )
     }
 
-    private static func demoData(
+    private static func demoRecipes(
         for language: AppLanguage
-    ) -> DemoRecipeData {
+    ) -> (primary: DemoRecipeData, grouped: DemoRecipeData) {
         switch language {
         case .swedish:
-            return DemoRecipeData(
-                title: "Pannkakor",
+            let primary = DemoRecipeData(
+                title: "Pannkakor (demo)",
                 servings: 4,
                 instructions: """
 1. Vispa ihop mjöl, socker och salt.
@@ -101,6 +167,11 @@ enum DemoRecipeSeeder {
 4. Smält smöret och blanda ner.
 5. Stek tunna pannkakor i smör.
 """,
+                groupTitles: [
+                    localized("ingredients", language: .swedish),
+                    nil,
+                    nil
+                ],
                 ingredients: [
                     DemoIngredient(name: "Vetemjöl", amountText: "2,5", unit: "dl"),
                     DemoIngredient(name: "Mjölk", amountText: "5", unit: "dl"),
@@ -109,9 +180,40 @@ enum DemoRecipeSeeder {
                     DemoIngredient(name: "Salt", amountText: "1", unit: "pinch")
                 ]
             )
+
+            let grouped = DemoRecipeData(
+                title: "Kyckling tikka masala (demo)",
+                servings: 4,
+                instructions: """
+1. Blanda ingredienserna till den marinerade kycklingen och låt stå 15 minuter.
+2. Fräs lök, vitlök och ingefära till såsen i lite olja.
+3. Tillsätt krydda och tomater, låt småkoka i 15 minuter.
+4. Stek kycklingen och blanda ner i såsen.
+5. Toppa med koriander och servera med ris.
+""",
+                groupTitles: [
+                    "Marinerad kyckling",
+                    "Tikka masala-sås",
+                    "Servering"
+                ],
+                ingredients: [
+                    DemoIngredient(name: "Kycklingbröst", amountText: "500", unit: "g", groupIndex: 0),
+                    DemoIngredient(name: "Vitlöksklyfta", amountText: "1", unit: "clove", groupIndex: 0),
+                    DemoIngredient(name: "Yoghurt", amountText: "1", unit: "dl", groupIndex: 0),
+                    DemoIngredient(name: "Tikka masala-krydda", amountText: "1", unit: "tbsp", groupIndex: 0),
+                    DemoIngredient(name: "Gul lök", amountText: "2", unit: "pcs", groupIndex: 1),
+                    DemoIngredient(name: "Vitlöksklyftor", amountText: "2", unit: "clove", groupIndex: 1),
+                    DemoIngredient(name: "Färsk ingefära", amountText: "1", unit: "tbsp", groupIndex: 1),
+                    DemoIngredient(name: "Krossade tomater", amountText: "1", unit: "can", groupIndex: 1),
+                    DemoIngredient(name: "Koriander", amountText: "1", unit: "bunch", groupIndex: 1),
+                    DemoIngredient(name: "Basmatiris", amountText: "3", unit: "dl", groupIndex: 2)
+                ]
+            )
+
+            return (primary, grouped)
         case .english:
-            return DemoRecipeData(
-                title: "Pancakes",
+            let primary = DemoRecipeData(
+                title: "Pancakes (demo)",
                 servings: 4,
                 instructions: """
 1. Mix flour, sugar and salt.
@@ -120,6 +222,11 @@ enum DemoRecipeSeeder {
 4. Melt the butter and stir in.
 5. Fry thin pancakes in butter.
 """,
+                groupTitles: [
+                    localized("ingredients", language: .english),
+                    nil,
+                    nil
+                ],
                 ingredients: [
                     DemoIngredient(name: "Flour", amountText: "2.5", unit: "dl"),
                     DemoIngredient(name: "Milk", amountText: "5", unit: "dl"),
@@ -128,8 +235,54 @@ enum DemoRecipeSeeder {
                     DemoIngredient(name: "Salt", amountText: "1", unit: "pinch")
                 ]
             )
+
+            let grouped = DemoRecipeData(
+                title: "Chicken tikka masala (demo)",
+                servings: 4,
+                instructions: """
+1. Mix the marinated chicken ingredients and leave for 15 minutes.
+2. Saute onion, garlic and ginger for the sauce.
+3. Add spices and tomatoes, then simmer for 15 minutes.
+4. Cook the chicken and stir it into the sauce.
+5. Top with coriander and serve with rice.
+""",
+                groupTitles: [
+                    "Marinated chicken",
+                    "Tikka masala sauce",
+                    "To serve"
+                ],
+                ingredients: [
+                    DemoIngredient(name: "Chicken breast", amountText: "500", unit: "g", groupIndex: 0),
+                    DemoIngredient(name: "Garlic clove", amountText: "1", unit: "clove", groupIndex: 0),
+                    DemoIngredient(name: "Yoghurt", amountText: "1", unit: "dl", groupIndex: 0),
+                    DemoIngredient(name: "Tikka spice powder", amountText: "1", unit: "tbsp", groupIndex: 0),
+                    DemoIngredient(name: "Onion", amountText: "2", unit: "pcs", groupIndex: 1),
+                    DemoIngredient(name: "Garlic cloves", amountText: "2", unit: "clove", groupIndex: 1),
+                    DemoIngredient(name: "Fresh ginger", amountText: "1", unit: "tbsp", groupIndex: 1),
+                    DemoIngredient(name: "Chopped tomatoes", amountText: "1", unit: "can", groupIndex: 1),
+                    DemoIngredient(name: "Fresh coriander", amountText: "1", unit: "bunch", groupIndex: 1),
+                    DemoIngredient(name: "Brown basmati rice", amountText: "3", unit: "dl", groupIndex: 2)
+                ]
+            )
+
+            return (primary, grouped)
         case .system:
-            return DemoRecipeData(title: "", servings: 0, instructions: "", ingredients: [])
+            return (
+                DemoRecipeData(
+                    title: "",
+                    servings: 0,
+                    instructions: "",
+                    groupTitles: [nil, nil, nil],
+                    ingredients: []
+                ),
+                DemoRecipeData(
+                    title: "",
+                    servings: 0,
+                    instructions: "",
+                    groupTitles: [nil, nil, nil],
+                    ingredients: []
+                )
+            )
         }
     }
 
@@ -158,24 +311,32 @@ enum DemoRecipeSeeder {
     private static func createDemo(
         in context: NSManagedObjectContext,
         locale: Locale,
-        language: AppLanguage
-    ) {
-        let demo = demoData(for: language)
+        language: AppLanguage,
+        data: DemoRecipeData
+    ) -> UUID? {
+        guard !data.title.isEmpty else { return nil }
 
         let recipe = Recipe(context: context)
-        recipe.id = UUID()
-        recipe.title = demo.title
-        recipe.sortTitle = demo.title.sortKey(locale: locale)
-        recipe.instructions = demo.instructions
+        let recipeID = UUID()
+        recipe.id = recipeID
+        recipe.title = data.title
+        recipe.sortTitle = data.title.sortKey(locale: locale)
+        recipe.instructions = data.instructions
         recipe.date = Date()
-        recipe.baseServings = Int16(demo.servings)
-        recipe.group1Title = localized("ingredients", language: language)
-        recipe.group2Title = nil
-        recipe.group3Title = nil
+        recipe.baseServings = Int16(data.servings)
+        recipe.group1Title = normalizedGroupTitle(
+            titleAt(index: 0, in: data.groupTitles)
+        ) ?? localized("ingredients", language: language)
+        recipe.group2Title = normalizedGroupTitle(
+            titleAt(index: 1, in: data.groupTitles)
+        )
+        recipe.group3Title = normalizedGroupTitle(
+            titleAt(index: 2, in: data.groupTitles)
+        )
 
         recipe.imageFilename = saveDemoImageIfAvailable()
 
-        for item in demo.ingredients {
+        for item in data.ingredients {
             let ingredient = IngredientEntity(context: context)
             ingredient.id = UUID()
             ingredient.name = item.name
@@ -187,21 +348,69 @@ enum DemoRecipeSeeder {
             ) ?? 0
             ingredient.scalable = true
             ingredient.pluralName = nil
-            ingredient.groupIndex = 0
+            ingredient.groupIndex = Int16(item.groupIndex)
             ingredient.recipe = recipe
         }
 
         do {
             try context.save()
-            UserDefaults.standard.set(true, forKey: didSeedKey)
-            UserDefaults.standard.set(recipe.id?.uuidString, forKey: demoRecipeIDKey)
-            UserDefaults.standard.set(language.rawValue, forKey: demoLanguageKey)
-            AppLog.storage.debug("Demo-recept skapat")
+            AppLog.storage.debug("Demo-recept skapat: \(data.title, privacy: .public)")
+            return recipeID
         } catch {
             AppLog.storage.error(
                 "Kunde inte spara demo-recept: \(error.localizedDescription, privacy: .public)"
             )
+            return nil
         }
+    }
+
+    private static func persistDemoState(
+        defaults: UserDefaults,
+        language: AppLanguage,
+        primaryDemoID: UUID?,
+        groupedDemoID: UUID?
+    ) {
+        defaults.set(true, forKey: didSeedKey)
+
+        if let primaryDemoID {
+            defaults.set(primaryDemoID.uuidString, forKey: demoRecipeIDKey)
+        } else {
+            defaults.removeObject(forKey: demoRecipeIDKey)
+        }
+
+        if let groupedDemoID {
+            defaults.set(groupedDemoID.uuidString, forKey: groupedDemoRecipeIDKey)
+        } else {
+            defaults.removeObject(forKey: groupedDemoRecipeIDKey)
+        }
+
+        defaults.set(language.rawValue, forKey: demoLanguageKey)
+    }
+
+    private static func validDemoID(
+        from rawValue: String?,
+        key: String,
+        defaults: UserDefaults
+    ) -> UUID? {
+        guard let rawValue else { return nil }
+        guard let id = UUID(uuidString: rawValue) else {
+            defaults.removeObject(forKey: key)
+            return nil
+        }
+        return id
+    }
+
+    private static func deleteDemoRecipeIfExists(
+        id: UUID?,
+        context: NSManagedObjectContext
+    ) {
+        guard let id else { return }
+        guard let recipe = fetchRecipe(id: id, context: context) else { return }
+        if let filename = recipe.imageFilename {
+            FileHelper.deleteImage(filename: filename)
+        }
+        context.delete(recipe)
+        try? context.save()
     }
 
     private static func localized(
@@ -230,6 +439,19 @@ enum DemoRecipeSeeder {
         }
 
         return NSLocalizedString(key, bundle: bundle, comment: "")
+    }
+
+    private static func normalizedGroupTitle(_ value: String?) -> String? {
+        let trimmed = (value ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
+    }
+
+    private static func titleAt(
+        index: Int,
+        in titles: [String?]
+    ) -> String? {
+        guard titles.indices.contains(index) else { return nil }
+        return titles[index]
     }
 
     private static func attachImageIfNeeded(
@@ -261,6 +483,7 @@ private struct DemoRecipeData {
     let title: String
     let servings: Int
     let instructions: String
+    let groupTitles: [String?]
     let ingredients: [DemoIngredient]
 }
 
@@ -268,4 +491,17 @@ private struct DemoIngredient {
     let name: String
     let amountText: String
     let unit: String
+    let groupIndex: Int
+
+    init(
+        name: String,
+        amountText: String,
+        unit: String,
+        groupIndex: Int = 0
+    ) {
+        self.name = name
+        self.amountText = amountText
+        self.unit = unit
+        self.groupIndex = groupIndex
+    }
 }
