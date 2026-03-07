@@ -16,6 +16,7 @@ struct StartView: View {
     @EnvironmentObject var themeManager: ThemeManager
     @EnvironmentObject var languageManager: LanguageManager
     @EnvironmentObject var cloudSyncStatus: CloudSyncStatus
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.verticalSizeClass) private var verticalSizeClass
 
 
@@ -179,11 +180,20 @@ struct StartView: View {
                 // =========================
                 // BILD UNDER INSTÄLLNINGAR
                 // =========================
-                Image("panna") // byt till ditt asset-namn
+                Image("startbild")
                     .resizable()
                     .scaledToFit()
-                    .frame(maxWidth: 260)
-                    .opacity(0.85)
+                    .frame(
+                        maxWidth: verticalSizeClass == .compact
+                            ? (horizontalSizeClass == .regular ? 460 : 400)
+                            : (horizontalSizeClass == .regular ? 460 : 360)
+                    )
+                    .shadow(
+                        color: themeManager.currentTheme.primaryTextColor.opacity(0.15),
+                        radius: 10,
+                        x: 0,
+                        y: 6
+                    )
                     .padding(.top, 24)
                 
                 // =========================
