@@ -11,7 +11,7 @@ import Combine
 @MainActor
 final class ThemeManager: ObservableObject {
 
-    @Published var currentTheme: AppTheme = .orange {
+    @Published var currentTheme: AppTheme = .white {
         didSet {
             UserDefaults.standard.set(currentTheme.rawValue, forKey: "theme")
         }

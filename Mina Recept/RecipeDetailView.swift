@@ -88,8 +88,6 @@ struct RecipeDetailView: View {
     @State private var showShareSheet = false
     @State private var share: CKShare?
     @State private var container: CKContainer?
-    //@State private var shareData: ShareData?
-    // @State private var shareItem: ShareURLWrapper?
     @State private var shareItem: ShareItem?
     
     

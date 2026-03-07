@@ -60,3 +60,15 @@
 - “Gör så här” flyttad i Edit‑vyn så rubriken ligger precis ovanför instruktionstexten.
 - Segment‑numren (1–3) i vitt tema tvingas till svart text.
 - IAP‑stöd: 3 gratis recept, paywall och upplåsning via StoreKit 2 (non‑consumable).
+
+## 2026-03-06
+- Flyttade demo-seed/flush/cleanup från launch till HomeView; StartView kör bara varningar + fördröjd iCloud-refresh.
+- Justerade StartView i landskap (maxbredd knapp).
+- Fixade delade recept-importer genom explicit environment i sheet.
+- Uppdaterade iCloud-varningstext + knapp (lokalisering) med steg inkl iCloud Drive och app-toggle.
+- Lade in lagringsrapport + rensa oanvända bilder i Inställningar (med bekräftelse).
+- Rensar orphanade bilder i iCloud/local via FileHelper.
+- EditRecipeView sparar ny bild bara vid ändring och tar bort gammal fil (rollback vid fel).
+- RecipeDetailView placeholder för “Ingen bild” syns tydligare.
+- Fix för språk: cleanup-summary översätts dynamiskt.
+

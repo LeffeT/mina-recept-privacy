@@ -17,11 +17,29 @@ enum DemoRecipeSeeder {
     private static let demoImageName = "demo_pancakes"
 
     static func seedIfNeeded(
-        context: NSManagedObjectContext,
+        container: NSPersistentContainer,
         languageManager: LanguageManager
     ) {
+        let selectedLanguage = languageManager.selectedLanguage
+        let locale = languageManager.locale
+        let context = container.newBackgroundContext()
+
+        context.perform {
+            seedIfNeeded(
+                context: context,
+                selectedLanguage: selectedLanguage,
+                locale: locale
+            )
+        }
+    }
+
+    private static func seedIfNeeded(
+        context: NSManagedObjectContext,
+        selectedLanguage: AppLanguage,
+        locale: Locale
+    ) {
         let defaults = UserDefaults.standard
-        let desiredLanguage = resolvedLanguage(from: languageManager)
+        let desiredLanguage = resolvedLanguage(from: selectedLanguage)
         let didSeed = defaults.bool(forKey: didSeedKey)
         let demoIDString = defaults.string(forKey: demoRecipeIDKey)
         let currentLangRaw = defaults.string(forKey: demoLanguageKey)
@@ -38,7 +56,7 @@ enum DemoRecipeSeeder {
             }
             createDemo(
                 in: context,
-                languageManager: languageManager,
+                locale: locale,
                 language: desiredLanguage
             )
             return
@@ -56,7 +74,7 @@ enum DemoRecipeSeeder {
                 context.delete(demoRecipe)
                 createDemo(
                     in: context,
-                    languageManager: languageManager,
+                    locale: locale,
                     language: desiredLanguage
                 )
             } else {
@@ -116,14 +134,14 @@ enum DemoRecipeSeeder {
     }
 
     private static func resolvedLanguage(
-        from languageManager: LanguageManager
+        from selectedLanguage: AppLanguage
     ) -> AppLanguage {
-        switch languageManager.selectedLanguage {
+        switch selectedLanguage {
         case .system:
             let code = Locale.current.language.languageCode?.identifier ?? "en"
             return code == "sv" ? .swedish : .english
         case .swedish, .english:
-            return languageManager.selectedLanguage
+            return selectedLanguage
         }
     }
 
@@ -139,7 +157,7 @@ enum DemoRecipeSeeder {
 
     private static func createDemo(
         in context: NSManagedObjectContext,
-        languageManager: LanguageManager,
+        locale: Locale,
         language: AppLanguage
     ) {
         let demo = demoData(for: language)
@@ -147,11 +165,11 @@ enum DemoRecipeSeeder {
         let recipe = Recipe(context: context)
         recipe.id = UUID()
         recipe.title = demo.title
-        recipe.sortTitle = demo.title.sortKey(locale: languageManager.locale)
+        recipe.sortTitle = demo.title.sortKey(locale: locale)
         recipe.instructions = demo.instructions
         recipe.date = Date()
         recipe.baseServings = Int16(demo.servings)
-        recipe.group1Title = L("ingredients", languageManager)
+        recipe.group1Title = localized("ingredients", language: language)
         recipe.group2Title = nil
         recipe.group3Title = nil
 
@@ -165,7 +183,7 @@ enum DemoRecipeSeeder {
             ingredient.amountText = item.amountText
             ingredient.amount = IngredientFormatter.parseAmount(
                 item.amountText,
-                locale: languageManager.locale
+                locale: locale
             ) ?? 0
             ingredient.scalable = true
             ingredient.pluralName = nil
@@ -184,6 +202,34 @@ enum DemoRecipeSeeder {
                 "Kunde inte spara demo-recept: \(error.localizedDescription, privacy: .public)"
             )
         }
+    }
+
+    private static func localized(
+        _ key: String,
+        language: AppLanguage
+    ) -> String {
+        switch language {
+        case .system:
+            return NSLocalizedString(key, comment: "")
+        case .swedish:
+            return localized(key, languageCode: "sv")
+        case .english:
+            return localized(key, languageCode: "en")
+        }
+    }
+
+    private static func localized(
+        _ key: String,
+        languageCode: String
+    ) -> String {
+        guard
+            let path = Bundle.main.path(forResource: languageCode, ofType: "lproj"),
+            let bundle = Bundle(path: path)
+        else {
+            return NSLocalizedString(key, comment: "")
+        }
+
+        return NSLocalizedString(key, bundle: bundle, comment: "")
     }
 
     private static func attachImageIfNeeded(

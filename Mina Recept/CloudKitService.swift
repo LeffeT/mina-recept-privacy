@@ -246,13 +246,16 @@ final class CloudKitService {
 
         record["ingredients"] = ingredientText as CKRecordValue
 
-        if let filename = payload.imageFilename,
-           let fileURL = FileHelper.imageURL(filename: filename) {
-            guard FileManager.default.fileExists(atPath: fileURL.path) else {
-                AppLog.cloudkit.error("Image file missing at: \(fileURL.path, privacy: .public)")
-                return
+        if let filename = payload.imageFilename {
+            let fileURL = FileHelper.imageURL(filename: filename)
+                ?? FileHelper.localImageURL(filename: filename)
+            if let fileURL {
+                guard FileManager.default.fileExists(atPath: fileURL.path) else {
+                    AppLog.cloudkit.error("Image file missing at: \(fileURL.path, privacy: .public)")
+                    return
+                }
+                record["image"] = CKAsset(fileURL: fileURL)
             }
-            record["image"] = CKAsset(fileURL: fileURL)
         }
 
         database.save(record) { _, error in

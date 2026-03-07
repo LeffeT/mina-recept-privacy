@@ -21,7 +21,6 @@ struct IngredientListView: View {
                     ZStack(alignment: .trailing) {
                         
                         HStack {
-                            // Text("\(ing.amount.cleanString) \(ing.unit) \(ing.name)")
                             Text(
                                 IngredientFormatter.formattedLine(
                                     ingredient: ing,

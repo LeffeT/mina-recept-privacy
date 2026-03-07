@@ -68,7 +68,6 @@ struct ImagePicker: UIViewControllerRepresentable {
             let image = info[.originalImage] as? UIImage
             parent.onImagePicked(image)
             
-            //picker.dismiss(animated: false) {
                 // 🔑 Tvinga iOS att släppa kamerans orientationslås
                 UIDevice.current.setValue(
                     UIDevice.current.orientation.rawValue,
