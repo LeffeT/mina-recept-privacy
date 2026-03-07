@@ -16,7 +16,7 @@ enum DemoRecipeSeeder {
     private static let groupedDemoRecipeIDKey = "grouped_demo_recipe_id"
     private static let demoLanguageKey = "demo_recipe_language"
     private static let demoSeedVersionKey = "demo_seed_version"
-    private static let currentDemoSeedVersion = 3
+    private static let currentDemoSeedVersion = 4
 
     static func seedIfNeeded(
         container: NSPersistentContainer,
@@ -207,11 +207,23 @@ enum DemoRecipeSeeder {
                 servings: 4,
                 imageAssetName: "tikka_masala",
                 instructions: """
-1. Blanda ingredienserna till den marinerade kycklingen och låt stå 15 minuter.
+Marinerad Kyckling
+
+1. Blanda ingredienserna i en skål.
+Skär kycklingen i bitar, lägg i kycklingen och låt stå 15 minuter.
+
+Tikka Masala Sås
+
 2. Fräs lök, vitlök och ingefära till såsen i lite olja.
-3. Tillsätt krydda och tomater, låt småkoka i 15 minuter.
-4. Stek kycklingen och blanda ner i såsen.
-5. Toppa med koriander och servera med ris.
+
+3. Tillsätt hackad koriander och krossade tomater, låt småkoka i 15 minuter.
+
+4. Stek kycklingen med marinaden och blanda ner i såsen.
+
+Servering
+
+5. Krydda med salt och svartpeppar, toppa med koriander.
+Servera med ris.
 """,
                 groupTitles: [
                     "Marinerad kyckling",
@@ -221,11 +233,11 @@ enum DemoRecipeSeeder {
                 ingredients: [
                     DemoIngredient(name: "Kycklingbröst", amountText: "500", unit: "g", groupIndex: 0),
                     DemoIngredient(name: "Vitlöksklyfta", amountText: "1", unit: "pcs", groupIndex: 0),
-                    DemoIngredient(name: "Yoghurt", amountText: "1", unit: "dl", groupIndex: 0),
+                    DemoIngredient(name: "Naturell Yoghurt", amountText: "1", unit: "dl", groupIndex: 0),
                     DemoIngredient(name: "Tikka masala-krydda", amountText: "1", unit: "tbsp", groupIndex: 0),
                     DemoIngredient(name: "Gul lök", amountText: "2", unit: "pcs", groupIndex: 1),
                     DemoIngredient(name: "Vitlöksklyftor", amountText: "2", unit: "pcs", groupIndex: 1),
-                    DemoIngredient(name: "Färsk ingefära", amountText: "1", unit: "tbsp", groupIndex: 1),
+                    DemoIngredient(name: "Färsk ingefära", amountText: "1", unit: "tsp", groupIndex: 1),
                     DemoIngredient(name: "Krossade tomater", amountText: "1", unit: "can", groupIndex: 1),
                     DemoIngredient(name: "Koriander", amountText: "1", unit: "bunch", groupIndex: 1),
                     DemoIngredient(name: "Basmatiris eller annat ris", amountText: "3", unit: "dl", groupIndex: 2)
@@ -264,11 +276,23 @@ enum DemoRecipeSeeder {
                 servings: 4,
                 imageAssetName: "tikka_masala",
                 instructions: """
-1. Mix the marinated chicken ingredients and leave for 15 minutes.
-2. Saute onion, garlic and ginger for the sauce.
-3. Add spices and tomatoes, then simmer for 15 minutes.
-4. Cook the chicken and stir it into the sauce.
-5. Top with coriander and serve with rice.
+Marinated chicken
+
+1. Mix the ingredients in a bowl.
+Cut the chicken into pieces, add it to the marinade and leave for 15 minutes.
+
+Tikka masala sauce
+
+2. Saute onion, garlic and ginger for the sauce in a little oil.
+
+3. Add chopped coriander and crushed tomatoes, then simmer for 15 minutes.
+
+4. Cook the chicken with the marinade and stir it into the sauce.
+
+To serve
+
+5. Season with salt and black pepper, top with coriander.
+Serve with rice.
 """,
                 groupTitles: [
                     "Marinated chicken",
@@ -278,12 +302,12 @@ enum DemoRecipeSeeder {
                 ingredients: [
                     DemoIngredient(name: "Chicken breast", amountText: "500", unit: "g", groupIndex: 0),
                     DemoIngredient(name: "Garlic clove", amountText: "1", unit: "", groupIndex: 0),
-                    DemoIngredient(name: "Yoghurt", amountText: "1", unit: "dl", groupIndex: 0),
+                    DemoIngredient(name: "Plain yoghurt", amountText: "1", unit: "dl", groupIndex: 0),
                     DemoIngredient(name: "Tikka spice powder", amountText: "1", unit: "tbsp", groupIndex: 0),
                     DemoIngredient(name: "Onion", amountText: "2", unit: "pcs", groupIndex: 1),
                     DemoIngredient(name: "Garlic cloves", amountText: "2", unit: "", groupIndex: 1),
-                    DemoIngredient(name: "Fresh ginger", amountText: "1", unit: "tbsp", groupIndex: 1),
-                    DemoIngredient(name: "Chopped tomatoes", amountText: "1", unit: "can", groupIndex: 1),
+                    DemoIngredient(name: "Fresh ginger", amountText: "1", unit: "tsp", groupIndex: 1),
+                    DemoIngredient(name: "Crushed tomatoes", amountText: "1", unit: "can", groupIndex: 1),
                     DemoIngredient(name: "Fresh coriander", amountText: "1", unit: "bunch", groupIndex: 1),
                     DemoIngredient(name: "Basmati rice or other rice", amountText: "3", unit: "dl", groupIndex: 2)
                 ]
