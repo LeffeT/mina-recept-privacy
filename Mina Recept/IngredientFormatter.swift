@@ -76,6 +76,9 @@ struct IngredientFormatter {
 
         let name = ingredient.name ?? ""
 
+        if unit.isEmpty {
+            return "\(amountString) \(name)"
+        }
         return "\(amountString) \(unit) \(name)"
     }
 
@@ -95,6 +98,9 @@ struct IngredientFormatter {
             ? ""
             : L("unit.\(unitKey)", languageManager)
 
+        if unit.isEmpty {
+            return "\(amountString) \(ingredient.name)"
+        }
         return "\(amountString) \(unit) \(ingredient.name)"
     }
 }

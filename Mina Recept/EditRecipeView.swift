@@ -701,10 +701,14 @@ struct IngredientFormSection: View {
                 HStack {
                     let rawAmount = ingredient.amountText?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
                     let amountString = rawAmount.isEmpty ? ingredient.amount.cleanString : rawAmount
+                    let unitKey = ingredient.unit ?? ""
+                    let unitValue = unitKey.isEmpty
+                        ? ""
+                        : L("unit.\(unitKey)", languageManager)
                     Text(
-                        "\(amountString) " +
-                        L("unit.\(ingredient.unit ?? "")", languageManager) +
-                        " \(ingredient.name ?? "")"
+                        unitValue.isEmpty
+                            ? "\(amountString) \(ingredient.name ?? "")"
+                            : "\(amountString) \(unitValue) \(ingredient.name ?? "")"
                     )
 
                         .foregroundColor(themeManager.currentTheme.primaryTextColor)

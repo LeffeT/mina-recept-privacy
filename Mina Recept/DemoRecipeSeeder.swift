@@ -16,7 +16,7 @@ enum DemoRecipeSeeder {
     private static let groupedDemoRecipeIDKey = "grouped_demo_recipe_id"
     private static let demoLanguageKey = "demo_recipe_language"
     private static let demoSeedVersionKey = "demo_seed_version"
-    private static let currentDemoSeedVersion = 2
+    private static let currentDemoSeedVersion = 3
 
     static func seedIfNeeded(
         container: NSPersistentContainer,
@@ -56,6 +56,20 @@ enum DemoRecipeSeeder {
         var groupedDemoID = validDemoID(
             from: defaults.string(forKey: groupedDemoRecipeIDKey),
             key: groupedDemoRecipeIDKey,
+            defaults: defaults
+        )
+
+        // If a tracked demo recipe was manually deleted, stop tracking it.
+        primaryDemoID = removeTrackingIfRecipeMissing(
+            id: primaryDemoID,
+            key: demoRecipeIDKey,
+            context: context,
+            defaults: defaults
+        )
+        groupedDemoID = removeTrackingIfRecipeMissing(
+            id: groupedDemoID,
+            key: groupedDemoRecipeIDKey,
+            context: context,
             defaults: defaults
         )
 
@@ -99,21 +113,25 @@ enum DemoRecipeSeeder {
         let demos = demoRecipes(for: desiredLanguage)
 
         if currentLang != desiredLanguage || requiresRecipeRefresh {
-            deleteDemoRecipeIfExists(id: primaryDemoID, context: context)
-            deleteDemoRecipeIfExists(id: groupedDemoID, context: context)
+            if primaryDemoID != nil {
+                deleteDemoRecipeIfExists(id: primaryDemoID, context: context)
+                primaryDemoID = createDemo(
+                    in: context,
+                    locale: locale,
+                    language: desiredLanguage,
+                    data: demos.primary
+                )
+            }
 
-            primaryDemoID = createDemo(
-                in: context,
-                locale: locale,
-                language: desiredLanguage,
-                data: demos.primary
-            )
-            groupedDemoID = createDemo(
-                in: context,
-                locale: locale,
-                language: desiredLanguage,
-                data: demos.grouped
-            )
+            if groupedDemoID != nil {
+                deleteDemoRecipeIfExists(id: groupedDemoID, context: context)
+                groupedDemoID = createDemo(
+                    in: context,
+                    locale: locale,
+                    language: desiredLanguage,
+                    data: demos.grouped
+                )
+            }
 
             persistDemoState(
                 defaults: defaults,
@@ -131,13 +149,8 @@ enum DemoRecipeSeeder {
                 imageName: demos.primary.imageAssetName,
                 context: context
             )
-        } else {
-            primaryDemoID = createDemo(
-                in: context,
-                locale: locale,
-                language: desiredLanguage,
-                data: demos.primary
-            )
+        } else if primaryDemoID != nil {
+            primaryDemoID = nil
         }
 
         if let id = groupedDemoID,
@@ -147,13 +160,8 @@ enum DemoRecipeSeeder {
                 imageName: demos.grouped.imageAssetName,
                 context: context
             )
-        } else {
-            groupedDemoID = createDemo(
-                in: context,
-                locale: locale,
-                language: desiredLanguage,
-                data: demos.grouped
-            )
+        } else if groupedDemoID != nil {
+            groupedDemoID = nil
         }
 
         persistDemoState(
@@ -197,7 +205,7 @@ enum DemoRecipeSeeder {
             let grouped = DemoRecipeData(
                 title: "Kyckling tikka masala (demo)",
                 servings: 4,
-                imageAssetName: "panna",
+                imageAssetName: "tikka_masala",
                 instructions: """
 1. Blanda ingredienserna till den marinerade kycklingen och låt stå 15 minuter.
 2. Fräs lök, vitlök och ingefära till såsen i lite olja.
@@ -212,15 +220,15 @@ enum DemoRecipeSeeder {
                 ],
                 ingredients: [
                     DemoIngredient(name: "Kycklingbröst", amountText: "500", unit: "g", groupIndex: 0),
-                    DemoIngredient(name: "Vitlöksklyfta", amountText: "1", unit: "clove", groupIndex: 0),
+                    DemoIngredient(name: "Vitlöksklyfta", amountText: "1", unit: "pcs", groupIndex: 0),
                     DemoIngredient(name: "Yoghurt", amountText: "1", unit: "dl", groupIndex: 0),
                     DemoIngredient(name: "Tikka masala-krydda", amountText: "1", unit: "tbsp", groupIndex: 0),
                     DemoIngredient(name: "Gul lök", amountText: "2", unit: "pcs", groupIndex: 1),
-                    DemoIngredient(name: "Vitlöksklyftor", amountText: "2", unit: "clove", groupIndex: 1),
+                    DemoIngredient(name: "Vitlöksklyftor", amountText: "2", unit: "pcs", groupIndex: 1),
                     DemoIngredient(name: "Färsk ingefära", amountText: "1", unit: "tbsp", groupIndex: 1),
                     DemoIngredient(name: "Krossade tomater", amountText: "1", unit: "can", groupIndex: 1),
                     DemoIngredient(name: "Koriander", amountText: "1", unit: "bunch", groupIndex: 1),
-                    DemoIngredient(name: "Basmatiris", amountText: "3", unit: "dl", groupIndex: 2)
+                    DemoIngredient(name: "Basmatiris eller annat ris", amountText: "3", unit: "dl", groupIndex: 2)
                 ]
             )
 
@@ -254,7 +262,7 @@ enum DemoRecipeSeeder {
             let grouped = DemoRecipeData(
                 title: "Chicken tikka masala (demo)",
                 servings: 4,
-                imageAssetName: "panna",
+                imageAssetName: "tikka_masala",
                 instructions: """
 1. Mix the marinated chicken ingredients and leave for 15 minutes.
 2. Saute onion, garlic and ginger for the sauce.
@@ -269,15 +277,15 @@ enum DemoRecipeSeeder {
                 ],
                 ingredients: [
                     DemoIngredient(name: "Chicken breast", amountText: "500", unit: "g", groupIndex: 0),
-                    DemoIngredient(name: "Garlic clove", amountText: "1", unit: "clove", groupIndex: 0),
+                    DemoIngredient(name: "Garlic clove", amountText: "1", unit: "", groupIndex: 0),
                     DemoIngredient(name: "Yoghurt", amountText: "1", unit: "dl", groupIndex: 0),
                     DemoIngredient(name: "Tikka spice powder", amountText: "1", unit: "tbsp", groupIndex: 0),
                     DemoIngredient(name: "Onion", amountText: "2", unit: "pcs", groupIndex: 1),
-                    DemoIngredient(name: "Garlic cloves", amountText: "2", unit: "clove", groupIndex: 1),
+                    DemoIngredient(name: "Garlic cloves", amountText: "2", unit: "", groupIndex: 1),
                     DemoIngredient(name: "Fresh ginger", amountText: "1", unit: "tbsp", groupIndex: 1),
                     DemoIngredient(name: "Chopped tomatoes", amountText: "1", unit: "can", groupIndex: 1),
                     DemoIngredient(name: "Fresh coriander", amountText: "1", unit: "bunch", groupIndex: 1),
-                    DemoIngredient(name: "Brown basmati rice", amountText: "3", unit: "dl", groupIndex: 2)
+                    DemoIngredient(name: "Basmati rice or other rice", amountText: "3", unit: "dl", groupIndex: 2)
                 ]
             )
 
@@ -413,6 +421,20 @@ enum DemoRecipeSeeder {
     ) -> UUID? {
         guard let rawValue else { return nil }
         guard let id = UUID(uuidString: rawValue) else {
+            defaults.removeObject(forKey: key)
+            return nil
+        }
+        return id
+    }
+
+    private static func removeTrackingIfRecipeMissing(
+        id: UUID?,
+        key: String,
+        context: NSManagedObjectContext,
+        defaults: UserDefaults
+    ) -> UUID? {
+        guard let id else { return nil }
+        if fetchRecipe(id: id, context: context) == nil {
             defaults.removeObject(forKey: key)
             return nil
         }
