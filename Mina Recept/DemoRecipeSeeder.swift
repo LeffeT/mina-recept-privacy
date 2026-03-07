@@ -15,7 +15,8 @@ enum DemoRecipeSeeder {
     private static let demoRecipeIDKey = "demo_recipe_id"
     private static let groupedDemoRecipeIDKey = "grouped_demo_recipe_id"
     private static let demoLanguageKey = "demo_recipe_language"
-    private static let demoImageName = "demo_pancakes"
+    private static let demoSeedVersionKey = "demo_seed_version"
+    private static let currentDemoSeedVersion = 2
 
     static func seedIfNeeded(
         container: NSPersistentContainer,
@@ -42,8 +43,10 @@ enum DemoRecipeSeeder {
         let defaults = UserDefaults.standard
         let desiredLanguage = resolvedLanguage(from: selectedLanguage)
         let didSeed = defaults.bool(forKey: didSeedKey)
+        let seededVersion = defaults.integer(forKey: demoSeedVersionKey)
         let currentLangRaw = defaults.string(forKey: demoLanguageKey)
         let currentLang = AppLanguage(rawValue: currentLangRaw ?? "") ?? desiredLanguage
+        let requiresRecipeRefresh = seededVersion < currentDemoSeedVersion
 
         var primaryDemoID = validDemoID(
             from: defaults.string(forKey: demoRecipeIDKey),
@@ -63,6 +66,7 @@ enum DemoRecipeSeeder {
         if !didSeed {
             if count > 0 {
                 defaults.set(true, forKey: didSeedKey)
+                defaults.set(currentDemoSeedVersion, forKey: demoSeedVersionKey)
                 return
             }
             let demos = demoRecipes(for: desiredLanguage)
@@ -94,7 +98,7 @@ enum DemoRecipeSeeder {
 
         let demos = demoRecipes(for: desiredLanguage)
 
-        if currentLang != desiredLanguage {
+        if currentLang != desiredLanguage || requiresRecipeRefresh {
             deleteDemoRecipeIfExists(id: primaryDemoID, context: context)
             deleteDemoRecipeIfExists(id: groupedDemoID, context: context)
 
@@ -122,7 +126,11 @@ enum DemoRecipeSeeder {
 
         if let id = primaryDemoID,
            let demoRecipe = fetchRecipe(id: id, context: context) {
-            attachImageIfNeeded(to: demoRecipe, context: context)
+            attachImageIfNeeded(
+                to: demoRecipe,
+                imageName: demos.primary.imageAssetName,
+                context: context
+            )
         } else {
             primaryDemoID = createDemo(
                 in: context,
@@ -134,7 +142,11 @@ enum DemoRecipeSeeder {
 
         if let id = groupedDemoID,
            let groupedDemo = fetchRecipe(id: id, context: context) {
-            attachImageIfNeeded(to: groupedDemo, context: context)
+            attachImageIfNeeded(
+                to: groupedDemo,
+                imageName: demos.grouped.imageAssetName,
+                context: context
+            )
         } else {
             groupedDemoID = createDemo(
                 in: context,
@@ -160,6 +172,7 @@ enum DemoRecipeSeeder {
             let primary = DemoRecipeData(
                 title: "Pannkakor (demo)",
                 servings: 4,
+                imageAssetName: "demo_pancakes",
                 instructions: """
 1. Vispa ihop mjöl, socker och salt.
 2. Häll i hälften av mjölken och vispa slätt.
@@ -184,6 +197,7 @@ enum DemoRecipeSeeder {
             let grouped = DemoRecipeData(
                 title: "Kyckling tikka masala (demo)",
                 servings: 4,
+                imageAssetName: "panna",
                 instructions: """
 1. Blanda ingredienserna till den marinerade kycklingen och låt stå 15 minuter.
 2. Fräs lök, vitlök och ingefära till såsen i lite olja.
@@ -215,6 +229,7 @@ enum DemoRecipeSeeder {
             let primary = DemoRecipeData(
                 title: "Pancakes (demo)",
                 servings: 4,
+                imageAssetName: "demo_pancakes",
                 instructions: """
 1. Mix flour, sugar and salt.
 2. Whisk in half of the milk until smooth.
@@ -239,6 +254,7 @@ enum DemoRecipeSeeder {
             let grouped = DemoRecipeData(
                 title: "Chicken tikka masala (demo)",
                 servings: 4,
+                imageAssetName: "panna",
                 instructions: """
 1. Mix the marinated chicken ingredients and leave for 15 minutes.
 2. Saute onion, garlic and ginger for the sauce.
@@ -271,6 +287,7 @@ enum DemoRecipeSeeder {
                 DemoRecipeData(
                     title: "",
                     servings: 0,
+                    imageAssetName: "",
                     instructions: "",
                     groupTitles: [nil, nil, nil],
                     ingredients: []
@@ -278,6 +295,7 @@ enum DemoRecipeSeeder {
                 DemoRecipeData(
                     title: "",
                     servings: 0,
+                    imageAssetName: "",
                     instructions: "",
                     groupTitles: [nil, nil, nil],
                     ingredients: []
@@ -334,7 +352,7 @@ enum DemoRecipeSeeder {
             titleAt(index: 2, in: data.groupTitles)
         )
 
-        recipe.imageFilename = saveDemoImageIfAvailable()
+        recipe.imageFilename = saveDemoImageIfAvailable(named: data.imageAssetName)
 
         for item in data.ingredients {
             let ingredient = IngredientEntity(context: context)
@@ -385,6 +403,7 @@ enum DemoRecipeSeeder {
         }
 
         defaults.set(language.rawValue, forKey: demoLanguageKey)
+        defaults.set(currentDemoSeedVersion, forKey: demoSeedVersionKey)
     }
 
     private static func validDemoID(
@@ -456,17 +475,19 @@ enum DemoRecipeSeeder {
 
     private static func attachImageIfNeeded(
         to recipe: Recipe,
+        imageName: String,
         context: NSManagedObjectContext
     ) {
         guard recipe.imageFilename?.isEmpty ?? true else { return }
-        guard let filename = saveDemoImageIfAvailable() else { return }
+        guard let filename = saveDemoImageIfAvailable(named: imageName) else { return }
         recipe.imageFilename = filename
         try? context.save()
     }
 
-    private static func saveDemoImageIfAvailable() -> String? {
-        guard let image = UIImage(named: demoImageName) else {
-            AppLog.storage.debug("Demo-bild saknas i Assets: \(demoImageName, privacy: .public)")
+    private static func saveDemoImageIfAvailable(named imageName: String) -> String? {
+        guard !imageName.isEmpty else { return nil }
+        guard let image = UIImage(named: imageName) else {
+            AppLog.storage.debug("Demo-bild saknas i Assets: \(imageName, privacy: .public)")
             return nil
         }
 
@@ -482,6 +503,7 @@ enum DemoRecipeSeeder {
 private struct DemoRecipeData {
     let title: String
     let servings: Int
+    let imageAssetName: String
     let instructions: String
     let groupTitles: [String?]
     let ingredients: [DemoIngredient]
