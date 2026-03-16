@@ -35,6 +35,24 @@ enum DemoRecipeSeeder {
         }
     }
 
+    // ✅ TestFlight/Debug: tvinga fram demo-recept även om det redan finns recept
+    static func seedForTesting(
+        container: NSPersistentContainer,
+        languageManager: LanguageManager
+    ) {
+        let selectedLanguage = languageManager.selectedLanguage
+        let locale = languageManager.locale
+        let context = container.newBackgroundContext()
+
+        context.perform {
+            seedForTesting(
+                context: context,
+                selectedLanguage: selectedLanguage,
+                locale: locale
+            )
+        }
+    }
+
     private static func seedIfNeeded(
         context: NSManagedObjectContext,
         selectedLanguage: AppLanguage,
@@ -169,6 +187,51 @@ enum DemoRecipeSeeder {
             language: desiredLanguage,
             primaryDemoID: primaryDemoID,
             groupedDemoID: groupedDemoID
+        )
+    }
+
+    private static func seedForTesting(
+        context: NSManagedObjectContext,
+        selectedLanguage: AppLanguage,
+        locale: Locale
+    ) {
+        let defaults = UserDefaults.standard
+        let desiredLanguage = resolvedLanguage(from: selectedLanguage)
+
+        let primaryDemoID = validDemoID(
+            from: defaults.string(forKey: demoRecipeIDKey),
+            key: demoRecipeIDKey,
+            defaults: defaults
+        )
+        let groupedDemoID = validDemoID(
+            from: defaults.string(forKey: groupedDemoRecipeIDKey),
+            key: groupedDemoRecipeIDKey,
+            defaults: defaults
+        )
+
+        // Ta bort tidigare demo-recept om de finns, så att vi inte dubblar.
+        deleteDemoRecipeIfExists(id: primaryDemoID, context: context)
+        deleteDemoRecipeIfExists(id: groupedDemoID, context: context)
+
+        let demos = demoRecipes(for: desiredLanguage)
+        let newPrimaryID = createDemo(
+            in: context,
+            locale: locale,
+            language: desiredLanguage,
+            data: demos.primary
+        )
+        let newGroupedID = createDemo(
+            in: context,
+            locale: locale,
+            language: desiredLanguage,
+            data: demos.grouped
+        )
+
+        persistDemoState(
+            defaults: defaults,
+            language: desiredLanguage,
+            primaryDemoID: newPrimaryID,
+            groupedDemoID: newGroupedID
         )
     }
 

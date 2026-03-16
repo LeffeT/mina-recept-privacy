@@ -232,19 +232,39 @@ struct SetupView: View {
                             subtitle: "Endast för TestFlight/debug",
                             theme: themeManager.currentTheme
                         ) {
-                            Toggle(
-                                isOn: Binding(
-                                    get: { purchaseManager.testOverrideEnabled },
-                                    set: { purchaseManager.setTestOverrideEnabled($0) }
+                            VStack(alignment: .leading, spacing: 12) {
+                                Toggle(
+                                    isOn: Binding(
+                                        get: { purchaseManager.testOverrideEnabled },
+                                        set: { purchaseManager.setTestOverrideEnabled($0) }
+                                    )
+                                ) {
+                                    Text("Obegränsat för test")
+                                }
+                                .toggleStyle(
+                                    SwitchToggleStyle(
+                                        tint: themeManager.currentTheme.accentColor
+                                    )
                                 )
-                            ) {
-                                Text("Obegränsat för test")
+
+                                Button {
+                                    DemoRecipeSeeder.seedForTesting(
+                                        container: CoreDataStack.shared.container,
+                                        languageManager: languageManager
+                                    )
+                                } label: {
+                                    Text("Skapa demo-recept")
+                                        .font(.footnote.weight(.semibold))
+                                        .foregroundColor(themeManager.currentTheme.primaryTextColor)
+                                        .frame(maxWidth: .infinity)
+                                        .frame(height: 44)
+                                        .background(
+                                            RoundedRectangle(cornerRadius: 12)
+                                                .fill(themeManager.currentTheme.buttonBackground)
+                                        )
+                                }
+                                .buttonStyle(.plain)
                             }
-                            .toggleStyle(
-                                SwitchToggleStyle(
-                                    tint: themeManager.currentTheme.accentColor
-                                )
-                            )
                         }
                     }
                     
