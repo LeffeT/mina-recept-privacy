@@ -19,6 +19,8 @@ struct PaywallView: View {
 
     @State private var isPurchasing = false
     @State private var errorMessage: String?
+    @State private var showSuccessAlert = false
+    @State private var purchaseTriggered = false
 
     private var product: Product? {
         purchaseManager.products.first { $0.id == PurchaseManager.unlimitedProductID }
@@ -110,25 +112,50 @@ struct PaywallView: View {
         }
         .onChange(of: purchaseManager.hasUnlimited) { _, unlocked in
             if unlocked {
+                if purchaseTriggered {
+                    showSuccessAlert = true
+                    purchaseTriggered = false
+                } else if !showSuccessAlert {
+                    dismiss()
+                }
+            }
+        }
+        .alert(
+            L("purchase_success_title", languageManager),
+            isPresented: $showSuccessAlert
+        ) {
+            Button(L("ok", languageManager)) {
                 dismiss()
             }
+        } message: {
+            Text(L("purchase_success_message", languageManager))
         }
     }
 
     private func handlePurchase() async {
         errorMessage = nil
         isPurchasing = true
+        purchaseTriggered = true
         defer { isPurchasing = false }
 
         guard product != nil else {
             errorMessage = L("price_unavailable", languageManager)
             await purchaseManager.loadProducts()
+            purchaseTriggered = false
             return
         }
 
         let success = await purchaseManager.purchase()
-        if !success && !purchaseManager.hasUnlimited {
+        if success {
+            if !showSuccessAlert {
+                showSuccessAlert = true
+            }
+        } else if !purchaseManager.hasUnlimited {
             errorMessage = L("purchase_failed", languageManager)
+        }
+
+        if !showSuccessAlert {
+            purchaseTriggered = false
         }
     }
 

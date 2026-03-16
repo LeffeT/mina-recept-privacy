@@ -67,6 +67,9 @@
 "restore_purchases" = "Restore purchases";
 "purchase_failed" = "Purchase failed. Try again.";
 "price_unavailable" = "Price not available yet. Try again in a moment.";
+"purchase_success_title" = "Unlocked";
+"purchase_success_message" = "Unlimited recipes unlocked.";
+"ok" = "OK";
 
 "unit.pcs"   = "pcs";
 "unit.g"     = "g";
