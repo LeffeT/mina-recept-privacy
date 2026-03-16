@@ -75,6 +75,21 @@ struct PaywallView: View {
                         .contentShape(RoundedRectangle(cornerRadius: 14))
                 }
 
+                if purchaseManager.canUseTestOverride {
+                    Button {
+                        purchaseManager.toggleTestOverride()
+                    } label: {
+                        paywallButtonLabel(
+                            purchaseManager.testOverrideEnabled
+                                ? "Testläge: Av"
+                                : "Testläge: Lås upp"
+                        )
+                        .padding(.vertical, 6)
+                        .contentShape(RoundedRectangle(cornerRadius: 14))
+                    }
+                    .opacity(0.75)
+                }
+
                 Button {
                     dismiss()
                 } label: {

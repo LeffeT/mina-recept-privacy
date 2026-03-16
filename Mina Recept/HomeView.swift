@@ -151,9 +151,13 @@ struct HomeView: View {
             }
             .onChange(of: cloudSyncStatus.state) { _, newValue in
                 guard newValue == .idle else { return }
+                // Efter iCloud-sync kan sortTitle saknas på importerade recept.
+                backfillSortTitlesIfNeeded()
                 flushPendingImagesIfPossible()
             }
             .onChange(of: languageManager.selectedLanguage) { _, _ in
+                // 🔤 Uppdatera sortTitle när språk ändras (Å/Ä/Ö m.m.)
+                backfillSortTitlesIfNeeded()
                 DemoRecipeSeeder.seedIfNeeded(
                     container: CoreDataStack.shared.container,
                     languageManager: languageManager
@@ -162,7 +166,7 @@ struct HomeView: View {
         }
     }
 
-    // 🔁 Fyll i sortTitle för gamla recept (körs säkert flera gånger)
+    // 🔁 Fyll i sortTitle för gamla/inkorrekta recept (körs säkert flera gånger)
     private func backfillSortTitlesIfNeeded() {
         let request: NSFetchRequest<Recipe> = Recipe.fetchRequest()
         let recipes = (try? context.fetch(request)) ?? []
@@ -170,10 +174,10 @@ struct HomeView: View {
         var didChange = false
 
         for recipe in recipes {
-            if recipe.sortTitle == nil || recipe.sortTitle!.isEmpty {
-                let title = recipe.title ?? ""
-                recipe.sortTitle = title.sortKey(locale: LanguageManager.shared.locale)
-
+            let title = recipe.title ?? ""
+            let expectedSortTitle = title.sortKey(locale: languageManager.locale)
+            if recipe.sortTitle != expectedSortTitle {
+                recipe.sortTitle = expectedSortTitle
                 didChange = true
             }
         }

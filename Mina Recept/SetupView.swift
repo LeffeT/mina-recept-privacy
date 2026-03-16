@@ -14,6 +14,7 @@ struct SetupView: View {
     @EnvironmentObject var themeManager: ThemeManager
     @EnvironmentObject var languageManager: LanguageManager
     @EnvironmentObject var cloudSyncStatus: CloudSyncStatus
+    @EnvironmentObject var purchaseManager: PurchaseManager
     @Environment(\.managedObjectContext) private var context
     @Environment(\.dismiss) private var dismiss
 
@@ -223,6 +224,28 @@ struct SetupView: View {
                         }
                         .font(.footnote)
                         .foregroundColor(themeManager.currentTheme.primaryTextColor)
+                    }
+
+                    if purchaseManager.canUseTestOverride {
+                        SettingsSection(
+                            title: "Testläge",
+                            subtitle: "Endast för TestFlight/debug",
+                            theme: themeManager.currentTheme
+                        ) {
+                            Toggle(
+                                isOn: Binding(
+                                    get: { purchaseManager.testOverrideEnabled },
+                                    set: { purchaseManager.setTestOverrideEnabled($0) }
+                                )
+                            ) {
+                                Text("Obegränsat för test")
+                            }
+                            .toggleStyle(
+                                SwitchToggleStyle(
+                                    tint: themeManager.currentTheme.accentColor
+                                )
+                            )
+                        }
                     }
                     
                     Button {

@@ -455,7 +455,9 @@ struct EditRecipeView: View {
     // MARK: - Save (orörd)
     
     private func save() {
-        recipe.title = title
+        let normalizedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        recipe.title = normalizedTitle
+        recipe.sortTitle = normalizedTitle.sortKey(locale: languageManager.locale)
         recipe.instructions = instructions
         recipe.group1Title = normalizedGroupTitle(groupTitle1)
         recipe.group2Title = normalizedGroupTitle(groupTitle2)

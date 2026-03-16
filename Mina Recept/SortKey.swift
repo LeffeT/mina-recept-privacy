@@ -11,21 +11,22 @@ extension String {
     /// Språkanpassad sortnyckel
     func sortKey(locale: Locale) -> String {
 
-        // Nordiska språk – korrekt Å Ä Ö
-        if let languageCode = locale.language.languageCode?.identifier,
-           ["sv", "da", "no"].contains(languageCode) {
+        // Alltid sortera Å/Ä/Ö sist (svensk ordning), även i engelska läget.
+        var key = self
+            .lowercased()
+            .replacingOccurrences(of: "å", with: "{")
+            .replacingOccurrences(of: "ä", with: "|")
+            .replacingOccurrences(of: "ö", with: "}")
 
-            return self
-                .lowercased()
-                .replacingOccurrences(of: "å", with: "{")
-                .replacingOccurrences(of: "ä", with: "|")
-                .replacingOccurrences(of: "ö", with: "}")
+        // För övriga tecken: normalisera accenter för stabil sortering.
+        if let languageCode = locale.language.languageCode?.identifier,
+           !["sv", "da", "no"].contains(languageCode) {
+            key = key.folding(
+                options: [.diacriticInsensitive, .caseInsensitive],
+                locale: locale
+            )
         }
 
-        // Alla andra språk
-        return self.folding(
-            options: [.diacriticInsensitive, .caseInsensitive],
-            locale: locale
-        )
+        return key
     }
 }

@@ -16,17 +16,24 @@ final class PurchaseManager: ObservableObject {
     nonisolated static let freeRecipeLimit = 3
 
     private let entitlementKey = "iap_unlimited_unlocked"
+    private let testOverrideKey = "iap_unlimited_override"
 
     @Published private(set) var hasUnlimited: Bool = UserDefaults.standard.bool(
         forKey: "iap_unlimited_unlocked"
     )
+    @Published private(set) var testOverrideEnabled: Bool = false
     @Published private(set) var products: [Product] = []
     @Published private(set) var isLoading = false
 
     private var updatesTask: Task<Void, Never>?
+    private var storeUnlocked = false
 
     init() {
         updatesTask = listenForTransactions()
+        if isTestBuild && UserDefaults.standard.bool(forKey: testOverrideKey) {
+            testOverrideEnabled = true
+            hasUnlimited = true
+        }
         Task { await refreshStatus() }
     }
 
@@ -100,8 +107,12 @@ final class PurchaseManager: ObservableObject {
             }
         }
 
-        hasUnlimited = unlocked
-        UserDefaults.standard.set(unlocked, forKey: entitlementKey)
+        storeUnlocked = unlocked
+        testOverrideEnabled = isTestBuild && UserDefaults.standard.bool(forKey: testOverrideKey)
+        let effectiveUnlocked = storeUnlocked || testOverrideEnabled
+
+        hasUnlimited = effectiveUnlocked
+        UserDefaults.standard.set(effectiveUnlocked, forKey: entitlementKey)
     }
 
     private func listenForTransactions() -> Task<Void, Never> {
@@ -115,5 +126,31 @@ final class PurchaseManager: ObservableObject {
                 }
             }
         }
+    }
+
+    var canUseTestOverride: Bool {
+        isTestBuild
+    }
+
+    func toggleTestOverride() {
+        setTestOverrideEnabled(!testOverrideEnabled)
+    }
+
+    func setTestOverrideEnabled(_ enabled: Bool) {
+        guard isTestBuild else { return }
+        UserDefaults.standard.set(enabled, forKey: testOverrideKey)
+        testOverrideEnabled = enabled
+
+        let effectiveUnlocked = storeUnlocked || testOverrideEnabled
+        hasUnlimited = effectiveUnlocked
+        UserDefaults.standard.set(effectiveUnlocked, forKey: entitlementKey)
+    }
+
+    private var isTestBuild: Bool {
+        #if DEBUG
+        return true
+        #else
+        return Bundle.main.appStoreReceiptURL?.lastPathComponent == "sandboxReceipt"
+        #endif
     }
 }
