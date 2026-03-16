@@ -79,7 +79,14 @@ struct PaywallView: View {
 
                 if purchaseManager.canUseTestOverride {
                     Button {
+                        let willEnable = !purchaseManager.testOverrideEnabled
                         purchaseManager.toggleTestOverride()
+                        if willEnable {
+                            purchaseTriggered = true
+                            showSuccessAlert = true
+                        } else {
+                            purchaseTriggered = false
+                        }
                     } label: {
                         paywallButtonLabel(
                             purchaseManager.testOverrideEnabled
