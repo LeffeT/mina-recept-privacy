@@ -19,6 +19,7 @@ import os
 
 @main
 struct MatlagningApp: App {
+    @Environment(\.scenePhase) private var scenePhase
     @State private var presentedRecipeID: String?
 
     @UIApplicationDelegateAdaptor(AppDelegate.self)
@@ -34,6 +35,7 @@ struct MatlagningApp: App {
     @StateObject private var deepLinkManager = DeepLinkManager()
     @StateObject private var cloudSyncStatus = CloudSyncStatus()
     @StateObject private var purchaseManager = PurchaseManager()
+    @StateObject private var cookingModeManager = CookingModeManager()
 
     // 💾 Core Data – EN källa
     let container = CoreDataStack.shared
@@ -54,6 +56,7 @@ struct MatlagningApp: App {
             .environmentObject(deepLinkManager)
             .environmentObject(cloudSyncStatus)
             .environmentObject(purchaseManager)
+            .environmentObject(cookingModeManager)
 
             // 📬 Tar emot deep links
             .onOpenURL { url in
@@ -91,6 +94,12 @@ struct MatlagningApp: App {
                         }
             #endif
                 }
+            }
+            .onAppear {
+                cookingModeManager.setAppActive(scenePhase == .active)
+            }
+            .onChange(of: scenePhase) { _, newValue in
+                cookingModeManager.setAppActive(newValue == .active)
             }
 
 

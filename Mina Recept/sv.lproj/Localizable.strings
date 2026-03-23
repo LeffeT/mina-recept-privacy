@@ -11,6 +11,9 @@
 "theme_section_subtitle" = "Välj utseende";
 "app_info_title" = "Om";
 "version_label" = "Version";
+"cooking_mode_section_title" = "Matlagningsläge";
+"cooking_mode_section_subtitle" = "Håll skärmen vaken medan appen är öppen.";
+"keep_screen_awake" = "Håll skärmen vaken";
 "theme_name_orange" = "Orange";
 "theme_name_green" = "Grön";
 "theme_name_black" = "Svart";

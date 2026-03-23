@@ -15,6 +15,7 @@ struct SetupView: View {
     @EnvironmentObject var languageManager: LanguageManager
     @EnvironmentObject var cloudSyncStatus: CloudSyncStatus
     @EnvironmentObject var purchaseManager: PurchaseManager
+    @EnvironmentObject var cookingModeManager: CookingModeManager
     @Environment(\.managedObjectContext) private var context
     @Environment(\.dismiss) private var dismiss
 
@@ -171,6 +172,23 @@ struct SetupView: View {
                                     )
                             }
                         }
+                        .font(.footnote)
+                        .foregroundColor(themeManager.currentTheme.primaryTextColor)
+                    }
+
+                    SettingsSection(
+                        title: L("cooking_mode_section_title", languageManager),
+                        subtitle: L("cooking_mode_section_subtitle", languageManager),
+                        theme: themeManager.currentTheme
+                    ) {
+                        Toggle(isOn: $cookingModeManager.isEnabled) {
+                            Text(L("keep_screen_awake", languageManager))
+                        }
+                        .toggleStyle(
+                            SwitchToggleStyle(
+                                tint: themeManager.currentTheme.accentColor
+                            )
+                        )
                         .font(.footnote)
                         .foregroundColor(themeManager.currentTheme.primaryTextColor)
                     }

@@ -11,6 +11,9 @@
 "theme_section_subtitle" = "Choose a look";
 "app_info_title" = "About";
 "version_label" = "Version";
+"cooking_mode_section_title" = "Cooking mode";
+"cooking_mode_section_subtitle" = "Keep the screen awake while the app is open.";
+"keep_screen_awake" = "Keep screen awake";
 "theme_name_orange" = "Orange";
 "theme_name_green" = "Green";
 "theme_name_black" = "Black";
