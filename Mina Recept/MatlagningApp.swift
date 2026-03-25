@@ -36,6 +36,9 @@ struct MatlagningApp: App {
     @StateObject private var cloudSyncStatus = CloudSyncStatus()
     @StateObject private var purchaseManager = PurchaseManager()
     @StateObject private var cookingModeManager = CookingModeManager()
+    @StateObject private var recipeBackupManager = RecipeBackupManager(
+        container: CoreDataStack.shared.container
+    )
 
     // 💾 Core Data – EN källa
     let container = CoreDataStack.shared
@@ -97,9 +100,29 @@ struct MatlagningApp: App {
             }
             .onAppear {
                 cookingModeManager.setAppActive(scenePhase == .active)
+                cloudSyncStatus.refresh()
+                recipeBackupManager.refreshBackup()
+                recipeBackupManager.handleCloudStateChange(
+                    cloudSyncStatus.state,
+                    locale: languageManager.locale
+                )
             }
             .onChange(of: scenePhase) { _, newValue in
                 cookingModeManager.setAppActive(newValue == .active)
+                if newValue == .active {
+                    cloudSyncStatus.refresh()
+                    recipeBackupManager.refreshBackup()
+                    recipeBackupManager.handleCloudStateChange(
+                        cloudSyncStatus.state,
+                        locale: languageManager.locale
+                    )
+                }
+            }
+            .onChange(of: cloudSyncStatus.state) { _, newValue in
+                recipeBackupManager.handleCloudStateChange(
+                    newValue,
+                    locale: languageManager.locale
+                )
             }
 
 

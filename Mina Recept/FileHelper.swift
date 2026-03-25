@@ -101,11 +101,9 @@ enum FileHelper {
         case .iCloudOnly:
             return saveToICloud(filename: filename, data: data)
         case .iCloudWithFallback:
-            if saveToICloud(filename: filename, data: data) {
-                removeLocalIfExists(filename: filename)
-                return true
-            }
-            return saveToLocal(filename: filename, data: data)
+            let localSaved = saveToLocal(filename: filename, data: data)
+            let cloudSaved = saveToICloud(filename: filename, data: data)
+            return localSaved || cloudSaved
         }
     }
 
@@ -122,6 +120,7 @@ enum FileHelper {
             if FileManager.default.fileExists(atPath: url.path) {
                 if let image = UIImage(contentsOfFile: url.path) {
                     imageCache.setObject(image, forKey: filename as NSString)
+                    ensureLocalImageAvailability(filename: filename)
                     return image
                 }
 
@@ -230,6 +229,44 @@ enum FileHelper {
         imageCache.removeObject(forKey: filename as NSString)
     }
 
+    @discardableResult
+    static func ensureLocalImageAvailability(filename: String) -> Bool {
+        if let localURL = localImageURL(filename: filename),
+           FileManager.default.fileExists(atPath: localURL.path) {
+            return true
+        }
+
+        guard let cloudURL = imageURL(filename: filename) else {
+            return false
+        }
+
+        guard FileManager.default.fileExists(atPath: cloudURL.path) else {
+            if isUbiquitousFile(cloudURL) {
+                startDownloadingIfNeeded(cloudURL)
+            }
+            return false
+        }
+
+        guard let data = try? Data(contentsOf: cloudURL) else {
+            if isUbiquitousFile(cloudURL) {
+                startDownloadingIfNeeded(cloudURL)
+            }
+            return false
+        }
+
+        return saveToLocal(filename: filename, data: data)
+    }
+
+    static func mirrorImageLocallyIfNeeded(filename: String) {
+        if ensureLocalImageAvailability(filename: filename) {
+            return
+        }
+
+        loadImageAsync(filename: filename) { _ in
+            _ = ensureLocalImageAvailability(filename: filename)
+        }
+    }
+
     // MARK: - Pending local images
 
     static func flushPendingImagesIfPossible() {
@@ -270,15 +307,14 @@ enum FileHelper {
             let target = cloudDir.appendingPathComponent(file.lastPathComponent)
 
             if FileManager.default.fileExists(atPath: target.path) {
-                try? FileManager.default.removeItem(at: file)
                 continue
             }
 
             do {
-                try FileManager.default.moveItem(at: file, to: target)
-                AppLog.storage.debug("Flyttad till iCloud: \(target.lastPathComponent, privacy: .public)")
+                try FileManager.default.copyItem(at: file, to: target)
+                AppLog.storage.debug("Kopierad till iCloud: \(target.lastPathComponent, privacy: .public)")
             } catch {
-                AppLog.storage.error("Kunde inte flytta till iCloud: \(error.localizedDescription, privacy: .public)")
+                AppLog.storage.error("Kunde inte kopiera till iCloud: \(error.localizedDescription, privacy: .public)")
             }
         }
     }
@@ -323,12 +359,6 @@ enum FileHelper {
             AppLog.storage.error("Kunde inte spara lokalt: \(error.localizedDescription, privacy: .public)")
             return false
         }
-    }
-
-    private static func removeLocalIfExists(filename: String) {
-        guard let dir = localDirectory else { return }
-        let url = dir.appendingPathComponent(filename)
-        try? FileManager.default.removeItem(at: url)
     }
 
     // MARK: - Storage report & cleanup
