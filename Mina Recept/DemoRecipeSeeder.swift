@@ -294,7 +294,7 @@ Servera med ris.
                     "Servering"
                 ],
                 ingredients: [
-                    DemoIngredient(name: "Kycklingbröst", amountText: "500", unit: "g", groupIndex: 0),
+                    DemoIngredient(name: "Kycklingfilé", amountText: "500", unit: "g", groupIndex: 0),
                     DemoIngredient(name: "Vitlöksklyfta", amountText: "1", unit: "pcs", groupIndex: 0),
                     DemoIngredient(name: "Naturell Yoghurt", amountText: "1", unit: "dl", groupIndex: 0),
                     DemoIngredient(name: "Tikka masala-krydda", amountText: "1", unit: "tbsp", groupIndex: 0),
@@ -363,7 +363,7 @@ Serve with rice.
                     "To serve"
                 ],
                 ingredients: [
-                    DemoIngredient(name: "Chicken breast", amountText: "500", unit: "g", groupIndex: 0),
+                    DemoIngredient(name: "Chicken fillet", amountText: "500", unit: "g", groupIndex: 0),
                     DemoIngredient(name: "Garlic clove", amountText: "1", unit: "", groupIndex: 0),
                     DemoIngredient(name: "Plain yoghurt", amountText: "1", unit: "dl", groupIndex: 0),
                     DemoIngredient(name: "Tikka spice powder", amountText: "1", unit: "tbsp", groupIndex: 0),
