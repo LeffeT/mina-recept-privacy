@@ -11,6 +11,11 @@ import os
 import UIKit
 
 enum DemoRecipeSeeder {
+    private enum DemoSlot {
+        case primary
+        case grouped
+    }
+
     private static let didSeedKey = "did_seed_demo_recipe_v1"
     private static let demoRecipeIDKey = "demo_recipe_id"
     private static let groupedDemoRecipeIDKey = "grouped_demo_recipe_id"
@@ -91,14 +96,28 @@ enum DemoRecipeSeeder {
             defaults: defaults
         )
 
+        let reconciledDemoIDs = reconcileExistingDemoRecipes(
+            context: context,
+            locale: locale,
+            language: desiredLanguage,
+            trackedPrimaryID: primaryDemoID,
+            trackedGroupedID: groupedDemoID
+        )
+        primaryDemoID = reconciledDemoIDs.primary
+        groupedDemoID = reconciledDemoIDs.grouped
+
         let request: NSFetchRequest<Recipe> = Recipe.fetchRequest()
         request.includesPendingChanges = true
 
         let count = (try? context.count(for: request)) ?? 0
         if !didSeed {
             if count > 0 {
-                defaults.set(true, forKey: didSeedKey)
-                defaults.set(currentDemoSeedVersion, forKey: demoSeedVersionKey)
+                persistDemoState(
+                    defaults: defaults,
+                    language: desiredLanguage,
+                    primaryDemoID: primaryDemoID,
+                    groupedDemoID: groupedDemoID
+                )
                 return
             }
             let demos = demoRecipes(for: desiredLanguage)
@@ -209,9 +228,11 @@ enum DemoRecipeSeeder {
             defaults: defaults
         )
 
-        // Ta bort tidigare demo-recept om de finns, så att vi inte dubblar.
-        deleteDemoRecipeIfExists(id: primaryDemoID, context: context)
-        deleteDemoRecipeIfExists(id: groupedDemoID, context: context)
+        deleteAllExistingDemoRecipes(
+            context: context,
+            trackedPrimaryID: primaryDemoID,
+            trackedGroupedID: groupedDemoID
+        )
 
         let demos = demoRecipes(for: desiredLanguage)
         let newPrimaryID = createDemo(
@@ -421,6 +442,16 @@ Serve with rice.
         return try? context.fetch(request).first
     }
 
+    private static func fetchRecipes(
+        titles: Set<String>,
+        context: NSManagedObjectContext
+    ) -> [Recipe] {
+        guard !titles.isEmpty else { return [] }
+        let request: NSFetchRequest<Recipe> = Recipe.fetchRequest()
+        request.predicate = NSPredicate(format: "title IN %@", Array(titles))
+        return (try? context.fetch(request)) ?? []
+    }
+
     private static func createDemo(
         in context: NSManagedObjectContext,
         locale: Locale,
@@ -474,6 +505,134 @@ Serve with rice.
                 "Kunde inte spara demo-recept: \(error.localizedDescription, privacy: .public)"
             )
             return nil
+        }
+    }
+
+    private static func reconcileExistingDemoRecipes(
+        context: NSManagedObjectContext,
+        locale: Locale,
+        language: AppLanguage,
+        trackedPrimaryID: UUID?,
+        trackedGroupedID: UUID?
+    ) -> (primary: UUID?, grouped: UUID?) {
+        let primaryID = reconcileDemoRecipe(
+            slot: .primary,
+            context: context,
+            locale: locale,
+            language: language,
+            trackedID: trackedPrimaryID
+        )
+        let groupedID = reconcileDemoRecipe(
+            slot: .grouped,
+            context: context,
+            locale: locale,
+            language: language,
+            trackedID: trackedGroupedID
+        )
+        return (primaryID, groupedID)
+    }
+
+    private static func reconcileDemoRecipe(
+        slot: DemoSlot,
+        context: NSManagedObjectContext,
+        locale: Locale,
+        language: AppLanguage,
+        trackedID: UUID?
+    ) -> UUID? {
+        let knownTitles = demoTitles(for: slot)
+        var candidates = fetchRecipes(titles: knownTitles, context: context)
+
+        if let trackedID,
+           let trackedRecipe = fetchRecipe(id: trackedID, context: context),
+           !candidates.contains(where: { $0.objectID == trackedRecipe.objectID }) {
+            candidates.append(trackedRecipe)
+        }
+
+        guard !candidates.isEmpty else { return nil }
+
+        let preferred = preferredDemoRecipe(
+            trackedID: trackedID,
+            candidates: candidates
+        )
+
+        for duplicate in candidates where duplicate.objectID != preferred.objectID {
+            deleteDemoRecipe(duplicate, context: context)
+        }
+
+        if trackedID == nil,
+           let currentTitle = preferred.title,
+           knownTitles.contains(currentTitle),
+           currentTitle != demoData(for: slot, language: language).title {
+            applyDemoData(
+                demoData(for: slot, language: language),
+                to: preferred,
+                locale: locale,
+                language: language,
+                context: context
+            )
+        } else {
+            attachImageIfNeeded(
+                to: preferred,
+                imageName: demoData(for: slot, language: language).imageAssetName,
+                context: context
+            )
+        }
+
+        if preferred.id == nil {
+            preferred.id = UUID()
+            try? context.save()
+        }
+
+        return preferred.id
+    }
+
+    private static func preferredDemoRecipe(
+        trackedID: UUID?,
+        candidates: [Recipe]
+    ) -> Recipe {
+        if let trackedID,
+           let trackedRecipe = candidates.first(where: { $0.id == trackedID }) {
+            return trackedRecipe
+        }
+
+        return candidates.max(by: { demoRecipeScore($0) < demoRecipeScore($1) }) ??
+            candidates[0]
+    }
+
+    private static func demoRecipeScore(_ recipe: Recipe) -> Int {
+        let ingredientCount = recipe.ingredientArray.count
+        let titleScore = (recipe.title ?? "").isEmpty ? 0 : 4
+        let instructionsScore = (recipe.instructions ?? "").isEmpty ? 0 : 3
+        let imageScore = recipe.imageFilename == nil ? 0 : 2
+        let servingsScore = recipe.baseServings > 0 ? 1 : 0
+        return ingredientCount * 10 + titleScore + instructionsScore + imageScore + servingsScore
+    }
+
+    private static func demoTitles(for slot: DemoSlot) -> Set<String> {
+        switch slot {
+        case .primary:
+            return Set([
+                demoRecipes(for: .swedish).primary.title,
+                demoRecipes(for: .english).primary.title
+            ])
+        case .grouped:
+            return Set([
+                demoRecipes(for: .swedish).grouped.title,
+                demoRecipes(for: .english).grouped.title
+            ])
+        }
+    }
+
+    private static func demoData(
+        for slot: DemoSlot,
+        language: AppLanguage
+    ) -> DemoRecipeData {
+        let demos = demoRecipes(for: language)
+        switch slot {
+        case .primary:
+            return demos.primary
+        case .grouped:
+            return demos.grouped
         }
     }
 
@@ -534,11 +693,44 @@ Serve with rice.
     ) {
         guard let id else { return }
         guard let recipe = fetchRecipe(id: id, context: context) else { return }
+        deleteDemoRecipe(recipe, context: context)
+    }
+
+    private static func deleteDemoRecipe(
+        _ recipe: Recipe,
+        context: NSManagedObjectContext
+    ) {
         if let filename = recipe.imageFilename {
             FileHelper.deleteImage(filename: filename)
         }
         context.delete(recipe)
         try? context.save()
+    }
+
+    private static func deleteAllExistingDemoRecipes(
+        context: NSManagedObjectContext,
+        trackedPrimaryID: UUID?,
+        trackedGroupedID: UUID?
+    ) {
+        let allDemoTitles = demoTitles(for: .primary).union(demoTitles(for: .grouped))
+        let titleMatchedRecipes = fetchRecipes(titles: allDemoTitles, context: context)
+        var recipesToDelete = titleMatchedRecipes
+
+        if let trackedPrimaryID,
+           let recipe = fetchRecipe(id: trackedPrimaryID, context: context),
+           !recipesToDelete.contains(where: { $0.objectID == recipe.objectID }) {
+            recipesToDelete.append(recipe)
+        }
+
+        if let trackedGroupedID,
+           let recipe = fetchRecipe(id: trackedGroupedID, context: context),
+           !recipesToDelete.contains(where: { $0.objectID == recipe.objectID }) {
+            recipesToDelete.append(recipe)
+        }
+
+        for recipe in recipesToDelete {
+            deleteDemoRecipe(recipe, context: context)
+        }
     }
 
     private static func localized(
@@ -590,6 +782,56 @@ Serve with rice.
         guard recipe.imageFilename?.isEmpty ?? true else { return }
         guard let filename = saveDemoImageIfAvailable(named: imageName) else { return }
         recipe.imageFilename = filename
+        try? context.save()
+    }
+
+    private static func applyDemoData(
+        _ data: DemoRecipeData,
+        to recipe: Recipe,
+        locale: Locale,
+        language: AppLanguage,
+        context: NSManagedObjectContext
+    ) {
+        recipe.title = data.title
+        recipe.sortTitle = data.title.sortKey(locale: locale)
+        recipe.instructions = data.instructions
+        recipe.baseServings = Int16(data.servings)
+        recipe.group1Title = normalizedGroupTitle(
+            titleAt(index: 0, in: data.groupTitles)
+        ) ?? localized("ingredients", language: language)
+        recipe.group2Title = normalizedGroupTitle(
+            titleAt(index: 1, in: data.groupTitles)
+        )
+        recipe.group3Title = normalizedGroupTitle(
+            titleAt(index: 2, in: data.groupTitles)
+        )
+
+        for ingredient in recipe.ingredientArray {
+            context.delete(ingredient)
+        }
+
+        for item in data.ingredients {
+            let ingredient = IngredientEntity(context: context)
+            ingredient.id = UUID()
+            ingredient.name = item.name
+            ingredient.unit = item.unit
+            ingredient.amountText = item.amountText
+            ingredient.amount = IngredientFormatter.parseAmount(
+                item.amountText,
+                locale: locale
+            ) ?? 0
+            ingredient.scalable = true
+            ingredient.pluralName = nil
+            ingredient.groupIndex = Int16(item.groupIndex)
+            ingredient.recipe = recipe
+        }
+
+        attachImageIfNeeded(
+            to: recipe,
+            imageName: data.imageAssetName,
+            context: context
+        )
+
         try? context.save()
     }
 

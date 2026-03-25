@@ -22,6 +22,7 @@ final class CloudSyncStatus: ObservableObject {
     @Published private(set) var state: State = .idle
     @Published private(set) var lastError: String?
     @Published private(set) var lastSyncDate: Date?
+    @Published private(set) var isCheckingAvailability = false
 
     private let container: NSPersistentCloudKitContainer
     private var cancellables = Set<AnyCancellable>()
@@ -29,6 +30,7 @@ final class CloudSyncStatus: ObservableObject {
     private var syncStartDate: Date?
     private var syncingEndHoldTask: Task<Void, Never>?
     private let minimumSyncDuration: TimeInterval = 10.0
+    private var availabilityRefreshID = UUID()
 
     init(container: NSPersistentCloudKitContainer) {
         self.container = container
@@ -48,33 +50,107 @@ final class CloudSyncStatus: ObservableObject {
     }
 
     private func updateAvailability() {
-        let available = FileManager.default.ubiquityIdentityToken != nil
+        let available = FileHelper.isICloudAvailable()
         if !available {
-            state = .unavailable
+            markUnavailable()
         } else if state == .unavailable {
             state = .idle
         }
     }
 
     private func refreshAccountStatus() {
+        guard FileHelper.isICloudAvailable() else {
+            markUnavailable()
+            return
+        }
+
+        let refreshID = UUID()
+        availabilityRefreshID = refreshID
+        isCheckingAvailability = true
+
         CKContainer.default().accountStatus { status, error in
             Task { @MainActor in
+                guard refreshID == self.availabilityRefreshID else { return }
+                guard FileHelper.isICloudAvailable() else {
+                    self.markUnavailable()
+                    return
+                }
+
                 if let error {
                     self.lastError = error.localizedDescription
                 }
                 switch status {
                 case .available:
-                    if self.state == .unavailable || self.state == .error {
-                        self.state = .idle
-                        self.lastError = nil
-                    }
+                    self.verifyContainerAccess(refreshID: refreshID)
                 case .noAccount, .restricted, .couldNotDetermine, .temporarilyUnavailable:
-                    self.state = .unavailable
+                    self.markUnavailable()
                 @unknown default:
-                    self.state = .unavailable
+                    self.markUnavailable()
                 }
             }
         }
+    }
+
+    private func verifyContainerAccess(refreshID: UUID) {
+        CKContainer.default().privateCloudDatabase.fetchAllRecordZones { _, error in
+            Task { @MainActor in
+                guard refreshID == self.availabilityRefreshID else { return }
+                guard FileHelper.isICloudAvailable() else {
+                    self.markUnavailable()
+                    return
+                }
+
+                self.isCheckingAvailability = false
+
+                if let ckError = error as? CKError {
+                    if self.isAccessDeniedError(ckError) {
+                        self.markUnavailable()
+                        return
+                    }
+
+                    if self.isTransientSyncError(ckError) {
+                        self.lastError = ckError.localizedDescription
+                        if self.state == .unavailable || self.state == .error {
+                            self.state = .idle
+                        }
+                        return
+                    }
+
+                    self.state = .error
+                    self.lastError = ckError.localizedDescription
+                    return
+                }
+
+                if let error {
+                    self.state = .error
+                    self.lastError = error.localizedDescription
+                    return
+                }
+
+                if self.state == .unavailable || self.state == .error {
+                    self.state = .idle
+                }
+                self.lastError = nil
+            }
+        }
+    }
+
+    private func isAccessDeniedError(_ error: CKError) -> Bool {
+        switch error.code {
+        case .notAuthenticated,
+             .permissionFailure,
+             .badContainer,
+             .missingEntitlement:
+            return true
+        default:
+            return false
+        }
+    }
+
+    private func markUnavailable() {
+        state = .unavailable
+        lastError = nil
+        isCheckingAvailability = false
     }
 
     private func observeEvents() {

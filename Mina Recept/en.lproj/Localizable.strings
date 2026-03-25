@@ -110,6 +110,8 @@
 "icloud_status_error" = "iCloud: Error";
 "icloud_status_starting" = "iCloud: Starting…";
 "icloud_last_sync" = "Last synced: %@";
+"loading_recipes_title" = "Loading recipes…";
+"loading_recipes_message" = "This can take a moment after reinstalling or while iCloud is syncing.";
 
 "icloud_required_title" = "iCloud required";
 "icloud_required_message" = "To share recipes, iCloud Drive must be enabled.

@@ -36,10 +36,24 @@ struct HomeView: View {
     @State private var showingAdd = false
     @State private var showingPaywall = false
     @State private var didScheduleBackgroundTasks = false
+    @State private var didScheduleStartupLoadingTimeout = false
+    @State private var startupLoadingTimedOut = false
+    @State private var isStartupLoading = false
+    @State private var hasCompletedInitialLoad = false
+    @State private var loadingSettleID = UUID()
+    @State private var demoSeedScheduleID = UUID()
 
     private var isLocked: Bool {
         !purchaseManager.hasUnlimited &&
         recipes.count >= PurchaseManager.freeRecipeLimit
+    }
+
+    private var navigationBarColorScheme: ColorScheme {
+        themeManager.currentTheme.primaryTextColor == .black ? .light : .dark
+    }
+
+    private var shouldShowStartupLoadingOverlay: Bool {
+        isStartupLoading && !startupLoadingTimedOut && !hasCompletedInitialLoad
     }
     
     
@@ -67,102 +81,101 @@ struct HomeView: View {
 
 
     var body: some View {
-        NavigationStack {
-            ZStack {
-                // 🌈 Tema-bakgrund
-                themeManager.currentTheme.backgroundGradient
-                    .ignoresSafeArea()
+        ZStack {
+            // 🌈 Tema-bakgrund
+            themeManager.currentTheme.backgroundGradient
+                .ignoresSafeArea()
 
-                List {
-                    ForEach(recipes) { recipe in
-                        NavigationLink {
-                            RecipeDetailView(recipe: recipe)
-                        } label: {
-                            HStack(spacing: 12) {
-
-                                // 🖼 Bild
-                                RecipeRowImage(filename: recipe.imageFilename)
-
-                                // 📝 Text
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text(recipe.title ?? L("untitled", languageManager))
-
-                                        .font(.headline)
-                                        .foregroundColor(
-                                            themeManager.currentTheme.primaryTextColor
-                                        )
-
-                                    if let date = recipe.date {
-                                        Text(date, style: .date)
-                                            .font(.caption)
-                                            .foregroundColor(
-                                                themeManager.currentTheme.primaryTextColor.opacity(0.7)
-                                            )
-                                    }
-                                }
-
-                                Spacer()
-                            }
-                            .padding(.vertical, 6)
-                        }
-                        .listRowBackground(Color.clear)
-                    }
-                    .onDelete(perform: delete)
-                }
-                .listStyle(.plain)
-                .scrollContentBackground(.hidden)
-            }
-            .navigationTitle(
-                L("recipes", languageManager)
-            )
-
-            .toolbar {
-                ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        if isLocked {
-                            showingPaywall = true
-                        } else {
-                            showingAdd = true
-                        }
+            List {
+                ForEach(recipes) { recipe in
+                    NavigationLink {
+                        RecipeDetailView(recipe: recipe)
                     } label: {
-                        Image(systemName: "plus")
-                            .foregroundColor(
-                                themeManager.currentTheme.primaryTextColor
-                            )
+                        RecipeListRow(recipe: recipe)
                     }
+                    .listRowBackground(Color.clear)
+                }
+                .onDelete(perform: delete)
+            }
+            .listStyle(.plain)
+            .scrollContentBackground(.hidden)
+            .opacity(shouldShowStartupLoadingOverlay ? 0.001 : 1)
+            .allowsHitTesting(!shouldShowStartupLoadingOverlay)
+
+            if shouldShowStartupLoadingOverlay {
+                loadingOverlay
+            }
+        }
+        .navigationTitle(
+            L("recipes", languageManager)
+        )
+        .toolbarBackground(themeManager.currentTheme.backgroundGradient, for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
+        .toolbarColorScheme(navigationBarColorScheme, for: .navigationBar)
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    if isLocked {
+                        showingPaywall = true
+                    } else {
+                        showingAdd = true
+                    }
+                } label: {
+                    Image(systemName: "plus")
+                        .foregroundColor(
+                            themeManager.currentTheme.primaryTextColor
+                        )
                 }
             }
-            .sheet(isPresented: $showingAdd) {
-                AddRecipeView()
-            }
-            .sheet(isPresented: $showingPaywall) {
-                PaywallView(
-                    freeLimit: PurchaseManager.freeRecipeLimit,
-                    currentCount: recipes.count
-                )
-            }
-            // 🔧 Kör EN GÅNG för att fylla sortTitle på gamla recept
-            .onAppear {
-              #if DEBUG
-                AppLog.ui.debug("HomeView visas")
-              #endif
-                backfillSortTitlesIfNeeded()
-                scheduleBackgroundTasksIfNeeded()
-            }
-            .onChange(of: cloudSyncStatus.state) { _, newValue in
-                guard newValue == .idle else { return }
+        }
+        .sheet(isPresented: $showingAdd) {
+            AddRecipeView()
+        }
+        .sheet(isPresented: $showingPaywall) {
+            PaywallView(
+                freeLimit: PurchaseManager.freeRecipeLimit,
+                currentCount: recipes.count
+            )
+        }
+        // 🔧 Kör EN GÅNG för att fylla sortTitle på gamla recept
+        .onAppear {
+          #if DEBUG
+            AppLog.ui.debug("HomeView visas")
+          #endif
+            backfillSortTitlesIfNeeded()
+            scheduleBackgroundTasksIfNeeded()
+            scheduleStartupLoadingTimeoutIfNeeded()
+            beginStartupLoadingIfNeeded()
+            scheduleDemoSeedIfNeeded()
+        }
+        .onChange(of: cloudSyncStatus.state) { _, newValue in
+            if newValue == .idle {
                 // Efter iCloud-sync kan sortTitle saknas på importerade recept.
                 backfillSortTitlesIfNeeded()
                 flushPendingImagesIfPossible()
             }
-            .onChange(of: languageManager.selectedLanguage) { _, _ in
-                // 🔤 Uppdatera sortTitle när språk ändras (Å/Ä/Ö m.m.)
-                backfillSortTitlesIfNeeded()
-                DemoRecipeSeeder.seedIfNeeded(
-                    container: CoreDataStack.shared.container,
-                    languageManager: languageManager
-                )
+
+            if newValue == .unavailable {
+                startupLoadingTimedOut = true
+                isStartupLoading = false
+                hasCompletedInitialLoad = true
             }
+
+            beginStartupLoadingIfNeeded()
+            scheduleDemoSeedIfNeeded()
+        }
+        .onChange(of: cloudSyncStatus.isCheckingAvailability) { _, _ in
+            beginStartupLoadingIfNeeded()
+            scheduleDemoSeedIfNeeded()
+        }
+        .onChange(of: languageManager.selectedLanguage) { _, _ in
+            // Språkbyte ska inte skriva om recept eller trigga iCloud-sync.
+        }
+        .onChange(of: recipes.count) { _, newCount in
+            if newCount > 0 || shouldShowStartupLoadingOverlay {
+                beginStartupLoadingIfNeeded()
+            }
+            scheduleDemoSeedIfNeeded()
         }
     }
 
@@ -191,13 +204,6 @@ struct HomeView: View {
         guard !didScheduleBackgroundTasks else { return }
         didScheduleBackgroundTasks = true
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
-            DemoRecipeSeeder.seedIfNeeded(
-                container: CoreDataStack.shared.container,
-                languageManager: languageManager
-            )
-        }
-
         flushPendingImagesIfPossible()
 
         DispatchQueue.global(qos: .background).asyncAfter(deadline: .now() + 2.0) {
@@ -205,8 +211,91 @@ struct HomeView: View {
         }
     }
 
+    private func scheduleStartupLoadingTimeoutIfNeeded() {
+        guard !didScheduleStartupLoadingTimeout else { return }
+        didScheduleStartupLoadingTimeout = true
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 25.0) {
+            startupLoadingTimedOut = true
+            isStartupLoading = false
+            hasCompletedInitialLoad = true
+        }
+    }
+
+    private func beginStartupLoadingIfNeeded() {
+        guard !hasCompletedInitialLoad else {
+            isStartupLoading = false
+            return
+        }
+
+        guard !startupLoadingTimedOut else {
+            isStartupLoading = false
+            return
+        }
+
+        guard FileHelper.isICloudAvailable() else {
+            isStartupLoading = false
+            return
+        }
+
+        let shouldBeginLoading =
+            isStartupLoading ||
+            (recipes.isEmpty && (
+                cloudSyncStatus.isCheckingAvailability ||
+                cloudSyncStatus.state == .syncing ||
+                cloudSyncStatus.lastSyncDate == nil
+            ))
+
+        guard shouldBeginLoading else {
+            hasCompletedInitialLoad = true
+            isStartupLoading = false
+            return
+        }
+
+        isStartupLoading = true
+
+        let settleID = UUID()
+        loadingSettleID = settleID
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) {
+            guard loadingSettleID == settleID else { return }
+
+            if startupLoadingTimedOut || cloudSyncStatus.state == .unavailable {
+                isStartupLoading = false
+                hasCompletedInitialLoad = true
+                return
+            }
+
+            if cloudSyncStatus.isCheckingAvailability || cloudSyncStatus.state == .syncing {
+                beginStartupLoadingIfNeeded()
+                return
+            }
+
+            hasCompletedInitialLoad = true
+            isStartupLoading = false
+        }
+    }
+
+    private func scheduleDemoSeedIfNeeded() {
+        guard !hasCompletedInitialLoad else { return }
+        let scheduleID = UUID()
+        demoSeedScheduleID = scheduleID
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) {
+            guard demoSeedScheduleID == scheduleID else { return }
+            guard !hasCompletedInitialLoad else { return }
+            guard !cloudSyncStatus.isCheckingAvailability else { return }
+            guard cloudSyncStatus.state != .syncing else { return }
+
+            DemoRecipeSeeder.seedIfNeeded(
+                container: CoreDataStack.shared.container,
+                languageManager: languageManager
+            )
+        }
+    }
+
     private func flushPendingImagesIfPossible() {
-        guard FileManager.default.ubiquityIdentityToken != nil else { return }
+        guard FileHelper.isICloudAvailable() else { return }
         DispatchQueue.global(qos: .utility).async {
             FileHelper.flushPendingImagesIfPossible()
         }
@@ -226,6 +315,79 @@ struct HomeView: View {
         }
 
         try? context.save()
+    }
+
+    private var loadingOverlay: some View {
+        VStack {
+            Spacer()
+
+            VStack(spacing: 14) {
+                ProgressView()
+                    .progressViewStyle(.circular)
+                    .tint(themeManager.currentTheme.accentColor)
+                    .scaleEffect(1.15)
+
+                Text(L("loading_recipes_title", languageManager))
+                    .font(.headline)
+                    .foregroundColor(themeManager.currentTheme.primaryTextColor)
+
+                Text(L("loading_recipes_message", languageManager))
+                    .font(.footnote)
+                    .multilineTextAlignment(.center)
+                    .foregroundColor(
+                        themeManager.currentTheme.primaryTextColor.opacity(0.75)
+                    )
+            }
+            .padding(.horizontal, 24)
+            .padding(.vertical, 22)
+            .background(
+                RoundedRectangle(cornerRadius: 18)
+                    .fill(themeManager.currentTheme.cardBackground.opacity(0.96))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 18)
+                    .stroke(
+                        themeManager.currentTheme.primaryTextColor.opacity(0.08),
+                        lineWidth: 1
+                    )
+            )
+            .padding(.horizontal, 28)
+
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .transition(.opacity)
+    }
+}
+
+private struct RecipeListRow: View {
+    @ObservedObject var recipe: Recipe
+
+    @EnvironmentObject var themeManager: ThemeManager
+    @EnvironmentObject var languageManager: LanguageManager
+
+    var body: some View {
+        HStack(spacing: 12) {
+            RecipeRowImage(filename: recipe.imageFilename)
+                .id(recipe.imageFilename ?? "recipe-row-placeholder")
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(recipe.title ?? L("untitled", languageManager))
+                    .font(.headline)
+                    .foregroundColor(themeManager.currentTheme.primaryTextColor)
+
+                if let date = recipe.date {
+                    Text(date, style: .date)
+                        .font(.caption)
+                        .foregroundColor(
+                            themeManager.currentTheme.primaryTextColor.opacity(0.7)
+                        )
+                }
+            }
+
+            Spacer()
+        }
+        .padding(.vertical, 6)
     }
 }
 

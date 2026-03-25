@@ -53,8 +53,17 @@ enum FileHelper {
     private static let imageCache = NSCache<NSString, UIImage>()
     private static let imageExtensions: Set<String> = ["jpg", "jpeg", "png"]
 
+    static func isICloudAvailable() -> Bool {
+        guard FileManager.default.ubiquityIdentityToken != nil else {
+            return false
+        }
+
+        return FileManager.default.url(forUbiquityContainerIdentifier: nil) != nil
+    }
+
     private static var iCloudDirectory: URL? {
-        FileManager.default
+        guard isICloudAvailable() else { return nil }
+        return FileManager.default
             .url(forUbiquityContainerIdentifier: nil)?
             .appendingPathComponent("Documents")
     }
@@ -270,7 +279,7 @@ enum FileHelper {
     // MARK: - Pending local images
 
     static func flushPendingImagesIfPossible() {
-        guard FileManager.default.ubiquityIdentityToken != nil else { return }
+        guard isICloudAvailable() else { return }
         guard let localDir = localDirectory else { return }
         guard let cloudDir = iCloudDirectory else { return }
 

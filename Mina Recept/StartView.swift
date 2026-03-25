@@ -29,7 +29,7 @@ struct StartView: View {
 
     
     private func isICloudAvailable() -> Bool {
-        FileManager.default.ubiquityIdentityToken != nil
+        FileHelper.isICloudAvailable()
     }
 
     private var iCloudStatusText: String {
@@ -333,13 +333,22 @@ struct StartView: View {
             .onAppear {
                 #if DEBUG
                 AppLog.cloudkit.debug(
-                    "Identity token: \(String(describing: FileManager.default.ubiquityIdentityToken), privacy: .private)"
+                    """
+                    iCloud available: \(FileHelper.isICloudAvailable(), privacy: .public)
+                    token: \(String(describing: FileManager.default.ubiquityIdentityToken), privacy: .private)
+                    containerURL: \(String(describing: FileManager.default.url(forUbiquityContainerIdentifier: nil)), privacy: .private)
+                    """
                 )
                 #endif
                 if !isICloudAvailable() {
                     showICloudAlert = true
                 }
                 scheduleICloudRefreshIfNeeded()
+            }
+            .onChange(of: cloudSyncStatus.state) { _, newValue in
+                if newValue == .unavailable {
+                    showICloudAlert = true
+                }
             }
             .alert(
                 L("icloud_required_title", languageManager),
