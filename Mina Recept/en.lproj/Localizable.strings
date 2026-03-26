@@ -129,3 +129,11 @@ Open Settings → [your name] → iCloud → iCloud Drive (On) → Show All → 
 "storage_cleanup_confirm_action" = "Clean up";
 "storage_cleanup_none" = "No unused images found.";
 "storage_cleanup_done" = "Removed %d iCloud and %d local images (%@ freed).";
+"demo_recipes_section_title" = "Demo recipes";
+"demo_recipes_section_subtitle" = "Created in the selected language.";
+"demo_recipes_create_button" = "Create demo recipes";
+"demo_recipes_creating" = "Creating demo recipes…";
+"demo_recipes_success_title" = "Done";
+"demo_recipes_success_message" = "Created %d demo recipes in %@.";
+"demo_recipes_failed_title" = "Could not create demo recipes";
+"demo_recipes_failed_message" = "Something went wrong while creating the demo recipes.";

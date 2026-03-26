@@ -128,3 +128,11 @@
 "storage_cleanup_confirm_action" = "Rensa";
 "storage_cleanup_none" = "Inga oanvända bilder hittades.";
 "storage_cleanup_done" = "Tog bort %d iCloud- och %d lokala bilder (%@ frigjort).";
+"demo_recipes_section_title" = "Demo-recept";
+"demo_recipes_section_subtitle" = "Skapas på valt språk.";
+"demo_recipes_create_button" = "Skapa demo-recept";
+"demo_recipes_creating" = "Skapar demo-recept…";
+"demo_recipes_success_title" = "Klart";
+"demo_recipes_success_message" = "Skapade %d demo-recept på %@.";
+"demo_recipes_failed_title" = "Kunde inte skapa demo-recept";
+"demo_recipes_failed_message" = "Något gick fel när demo-recepten skulle skapas.";

@@ -43,18 +43,24 @@ enum DemoRecipeSeeder {
     // ✅ TestFlight/Debug: tvinga fram demo-recept även om det redan finns recept
     static func seedForTesting(
         container: NSPersistentContainer,
-        languageManager: LanguageManager
+        languageManager: LanguageManager,
+        completion: ((Int) -> Void)? = nil
     ) {
         let selectedLanguage = languageManager.selectedLanguage
         let locale = languageManager.locale
         let context = container.newBackgroundContext()
 
         context.perform {
-            seedForTesting(
+            let createdCount = seedForTesting(
                 context: context,
                 selectedLanguage: selectedLanguage,
                 locale: locale
             )
+
+            guard let completion else { return }
+            DispatchQueue.main.async {
+                completion(createdCount)
+            }
         }
     }
 
@@ -213,7 +219,7 @@ enum DemoRecipeSeeder {
         context: NSManagedObjectContext,
         selectedLanguage: AppLanguage,
         locale: Locale
-    ) {
+    ) -> Int {
         let defaults = UserDefaults.standard
         let desiredLanguage = resolvedLanguage(from: selectedLanguage)
 
@@ -254,6 +260,8 @@ enum DemoRecipeSeeder {
             primaryDemoID: newPrimaryID,
             groupedDemoID: newGroupedID
         )
+
+        return [newPrimaryID, newGroupedID].compactMap { $0 }.count
     }
 
     private static func demoRecipes(

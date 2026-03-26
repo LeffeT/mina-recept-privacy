@@ -14,7 +14,6 @@ struct SetupView: View {
     @EnvironmentObject var themeManager: ThemeManager
     @EnvironmentObject var languageManager: LanguageManager
     @EnvironmentObject var cloudSyncStatus: CloudSyncStatus
-    @EnvironmentObject var purchaseManager: PurchaseManager
     @EnvironmentObject var cookingModeManager: CookingModeManager
     @Environment(\.managedObjectContext) private var context
     @Environment(\.dismiss) private var dismiss
@@ -28,6 +27,10 @@ struct SetupView: View {
     @State private var cleanupSummary: CleanupSummary?
     @State private var isCleaning = false
     @State private var showCleanupConfirm = false
+    @State private var isSeedingDemoRecipes = false
+    @State private var showDemoSeedAlert = false
+    @State private var demoSeedAlertMessage = ""
+    @State private var demoSeedAlertTitle = ""
     
     private var versionText: String {
         let version = Bundle.main.object(
@@ -78,6 +81,24 @@ struct SetupView: View {
         formatter.dateStyle = .none
         let time = formatter.string(from: date)
         return String(format: L("icloud_last_sync", languageManager), time)
+    }
+
+    private var canShowDemoRecipeTools: Bool {
+        #if DEBUG
+        return true
+        #else
+        return Bundle.main.appStoreReceiptURL?.lastPathComponent == "sandboxReceipt"
+        #endif
+    }
+
+    private var resolvedDemoLanguage: AppLanguage {
+        switch languageManager.selectedLanguage {
+        case .system:
+            let code = Locale.current.language.languageCode?.identifier ?? "en"
+            return code == "sv" ? .swedish : .english
+        case .swedish, .english:
+            return languageManager.selectedLanguage
+        }
     }
 
     var body: some View {
@@ -244,44 +265,62 @@ struct SetupView: View {
                         .foregroundColor(themeManager.currentTheme.primaryTextColor)
                     }
 
-                    if purchaseManager.canUseTestOverride {
+                    if canShowDemoRecipeTools {
                         SettingsSection(
-                            title: "Testläge",
-                            subtitle: "Endast för TestFlight/debug",
+                            title: L("demo_recipes_section_title", languageManager),
+                            subtitle: L("demo_recipes_section_subtitle", languageManager),
                             theme: themeManager.currentTheme
                         ) {
                             VStack(alignment: .leading, spacing: 12) {
-                                Toggle(
-                                    isOn: Binding(
-                                        get: { purchaseManager.testOverrideEnabled },
-                                        set: { purchaseManager.setTestOverrideEnabled($0) }
-                                    )
-                                ) {
-                                    Text("Obegränsat för test")
-                                }
-                                .toggleStyle(
-                                    SwitchToggleStyle(
-                                        tint: themeManager.currentTheme.accentColor
-                                    )
-                                )
-
                                 Button {
+                                    guard !isSeedingDemoRecipes else { return }
+                                    isSeedingDemoRecipes = true
+                                    let seededLanguageTitle = resolvedDemoLanguage.title
+
                                     DemoRecipeSeeder.seedForTesting(
                                         container: CoreDataStack.shared.container,
                                         languageManager: languageManager
-                                    )
-                                } label: {
-                                    Text("Skapa demo-recept")
-                                        .font(.footnote.weight(.semibold))
-                                        .foregroundColor(themeManager.currentTheme.primaryTextColor)
-                                        .frame(maxWidth: .infinity)
-                                        .frame(height: 44)
-                                        .background(
-                                            RoundedRectangle(cornerRadius: 12)
-                                                .fill(themeManager.currentTheme.buttonBackground)
+                                    ) { createdCount in
+                                        isSeedingDemoRecipes = false
+                                        refreshStorageReport()
+                                        demoSeedAlertTitle = L(
+                                            createdCount > 0
+                                                ? "demo_recipes_success_title"
+                                                : "demo_recipes_failed_title",
+                                            languageManager
                                         )
+                                        demoSeedAlertMessage = createdCount > 0
+                                            ? String(
+                                                format: L("demo_recipes_success_message", languageManager),
+                                                createdCount,
+                                                seededLanguageTitle
+                                            )
+                                            : L("demo_recipes_failed_message", languageManager)
+                                        showDemoSeedAlert = true
+                                    }
+                                } label: {
+                                    Group {
+                                        if isSeedingDemoRecipes {
+                                            HStack(spacing: 10) {
+                                                ProgressView()
+                                                    .tint(themeManager.currentTheme.accentColor)
+                                                Text(L("demo_recipes_creating", languageManager))
+                                            }
+                                        } else {
+                                            Text(L("demo_recipes_create_button", languageManager))
+                                        }
+                                    }
+                                    .font(.footnote.weight(.semibold))
+                                    .foregroundColor(themeManager.currentTheme.primaryTextColor)
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 44)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .fill(themeManager.currentTheme.buttonBackground)
+                                    )
                                 }
                                 .buttonStyle(.plain)
+                                .disabled(isSeedingDemoRecipes)
                             }
                         }
                     }
@@ -319,6 +358,14 @@ struct SetupView: View {
             Button(L("cancel", languageManager), role: .cancel) {}
         } message: {
             Text(L("storage_cleanup_confirm_message", languageManager))
+        }
+        .alert(
+            demoSeedAlertTitle,
+            isPresented: $showDemoSeedAlert
+        ) {
+            Button(L("ok", languageManager), role: .cancel) {}
+        } message: {
+            Text(demoSeedAlertMessage)
         }
     }
 

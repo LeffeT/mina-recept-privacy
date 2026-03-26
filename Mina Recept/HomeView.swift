@@ -40,6 +40,7 @@ struct HomeView: View {
     @State private var startupLoadingTimedOut = false
     @State private var isStartupLoading = false
     @State private var hasCompletedInitialLoad = false
+    @State private var hasRequestedStartupDemoSeed = false
     @State private var loadingSettleID = UUID()
     @State private var demoSeedScheduleID = UUID()
 
@@ -172,6 +173,9 @@ struct HomeView: View {
             // Språkbyte ska inte skriva om recept eller trigga iCloud-sync.
         }
         .onChange(of: recipes.count) { _, newCount in
+            if newCount > 0 {
+                hasRequestedStartupDemoSeed = true
+            }
             if newCount > 0 || shouldShowStartupLoadingOverlay {
                 beginStartupLoadingIfNeeded()
             }
@@ -277,20 +281,27 @@ struct HomeView: View {
     }
 
     private func scheduleDemoSeedIfNeeded() {
-        guard !hasCompletedInitialLoad else { return }
+        guard !hasRequestedStartupDemoSeed else { return }
+        guard recipes.isEmpty else { return }
         let scheduleID = UUID()
         demoSeedScheduleID = scheduleID
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) {
             guard demoSeedScheduleID == scheduleID else { return }
-            guard !hasCompletedInitialLoad else { return }
+            guard !hasRequestedStartupDemoSeed else { return }
+            guard recipes.isEmpty else { return }
             guard !cloudSyncStatus.isCheckingAvailability else { return }
             guard cloudSyncStatus.state != .syncing else { return }
 
+            hasRequestedStartupDemoSeed = true
             DemoRecipeSeeder.seedIfNeeded(
                 container: CoreDataStack.shared.container,
                 languageManager: languageManager
             )
+
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                beginStartupLoadingIfNeeded()
+            }
         }
     }
 
