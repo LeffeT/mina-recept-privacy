@@ -21,6 +21,7 @@ import os
 struct MatlagningApp: App {
     @Environment(\.scenePhase) private var scenePhase
     @State private var presentedRecipeID: String?
+    @State private var didRunStartupTasks = false
 
     @UIApplicationDelegateAdaptor(AppDelegate.self)
        var appDelegate
@@ -36,18 +37,32 @@ struct MatlagningApp: App {
     @StateObject private var cloudSyncStatus = CloudSyncStatus()
     @StateObject private var purchaseManager = PurchaseManager()
     @StateObject private var cookingModeManager = CookingModeManager()
+    @StateObject private var coreDataStack = CoreDataStack.shared
     @StateObject private var recipeBackupManager = RecipeBackupManager(
         container: CoreDataStack.shared.container
     )
 
-    // 💾 Core Data – EN källa
-    let container = CoreDataStack.shared
+    private var container: NSPersistentCloudKitContainer {
+        coreDataStack.container
+    }
 
     var body: some Scene {
         WindowGroup {
-         
-            NavigationStack {
-                StartView()
+            ZStack {
+                themeManager.currentTheme.backgroundGradient
+                    .ignoresSafeArea()
+
+                if coreDataStack.isLoaded {
+                    NavigationStack {
+                        StartView()
+                    }
+                } else {
+                    ProgressView()
+                        .progressViewStyle(.circular)
+                        .tint(themeManager.currentTheme.primaryTextColor)
+                        .scaleEffect(1.2)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
             }
             // 🌍 Environment
             .environment(
@@ -81,7 +96,7 @@ struct MatlagningApp: App {
             // 📥 Visar import-landing när recept kommer via deep link
             .sheet(
                 isPresented: Binding(
-                    get: { presentedRecipeID != nil },
+                    get: { coreDataStack.isLoaded && presentedRecipeID != nil },
                     set: { if !$0 { presentedRecipeID = nil } }
                 )
             ) {
@@ -99,16 +114,16 @@ struct MatlagningApp: App {
                 }
             }
             .onAppear {
+                coreDataStack.loadIfNeeded()
                 cookingModeManager.setAppActive(scenePhase == .active)
-                cloudSyncStatus.refresh()
-                recipeBackupManager.refreshBackup()
-                recipeBackupManager.handleCloudStateChange(
-                    cloudSyncStatus.state,
-                    locale: languageManager.locale
-                )
+                runStartupTasksIfNeeded()
+            }
+            .onChange(of: coreDataStack.isLoaded) { _, _ in
+                runStartupTasksIfNeeded()
             }
             .onChange(of: scenePhase) { _, newValue in
                 cookingModeManager.setAppActive(newValue == .active)
+                guard coreDataStack.isLoaded else { return }
                 if newValue == .active {
                     cloudSyncStatus.refresh()
                     recipeBackupManager.refreshBackup()
@@ -156,4 +171,18 @@ struct MatlagningApp: App {
 // MARK: - Hjälpmodell för SwiftUI sheet(item:)
 struct PendingRecipe: Identifiable {
     let id: String
+}
+
+private extension MatlagningApp {
+    func runStartupTasksIfNeeded() {
+        guard coreDataStack.isLoaded, !didRunStartupTasks else { return }
+        didRunStartupTasks = true
+
+        cloudSyncStatus.refresh()
+        recipeBackupManager.refreshBackup()
+        recipeBackupManager.handleCloudStateChange(
+            cloudSyncStatus.state,
+            locale: languageManager.locale
+        )
+    }
 }
