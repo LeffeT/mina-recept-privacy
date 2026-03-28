@@ -7,7 +7,7 @@
 import SwiftUI
 import Foundation
 
-struct PendingIngredient: Codable {
+nonisolated struct PendingIngredient: Codable {
     let name: String
     let amount: Double
     let amountText: String?

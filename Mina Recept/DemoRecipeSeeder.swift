@@ -22,6 +22,10 @@ enum DemoRecipeSeeder {
     private static let demoLanguageKey = "demo_recipe_language"
     private static let demoSeedVersionKey = "demo_seed_version"
     private static let currentDemoSeedVersion = 4
+    private static let primaryDemoStableID =
+        UUID(uuidString: "B454D88D-1C76-4C31-A44D-5AA3FEF6A101")!
+    private static let groupedDemoStableID =
+        UUID(uuidString: "1E6C8C27-7780-4B41-B90D-D8B5C0B8A202")!
 
     static func seedIfNeeded(
         container: NSPersistentContainer,
@@ -129,12 +133,14 @@ enum DemoRecipeSeeder {
             let demos = demoRecipes(for: desiredLanguage)
             primaryDemoID = createDemo(
                 in: context,
+                slot: .primary,
                 locale: locale,
                 language: desiredLanguage,
                 data: demos.primary
             )
             groupedDemoID = createDemo(
                 in: context,
+                slot: .grouped,
                 locale: locale,
                 language: desiredLanguage,
                 data: demos.grouped
@@ -160,6 +166,7 @@ enum DemoRecipeSeeder {
                 deleteDemoRecipeIfExists(id: primaryDemoID, context: context)
                 primaryDemoID = createDemo(
                     in: context,
+                    slot: .primary,
                     locale: locale,
                     language: desiredLanguage,
                     data: demos.primary
@@ -170,6 +177,7 @@ enum DemoRecipeSeeder {
                 deleteDemoRecipeIfExists(id: groupedDemoID, context: context)
                 groupedDemoID = createDemo(
                     in: context,
+                    slot: .grouped,
                     locale: locale,
                     language: desiredLanguage,
                     data: demos.grouped
@@ -243,12 +251,14 @@ enum DemoRecipeSeeder {
         let demos = demoRecipes(for: desiredLanguage)
         let newPrimaryID = createDemo(
             in: context,
+            slot: .primary,
             locale: locale,
             language: desiredLanguage,
             data: demos.primary
         )
         let newGroupedID = createDemo(
             in: context,
+            slot: .grouped,
             locale: locale,
             language: desiredLanguage,
             data: demos.grouped
@@ -462,6 +472,7 @@ Serve with rice.
 
     private static func createDemo(
         in context: NSManagedObjectContext,
+        slot: DemoSlot,
         locale: Locale,
         language: AppLanguage,
         data: DemoRecipeData
@@ -469,7 +480,7 @@ Serve with rice.
         guard !data.title.isEmpty else { return nil }
 
         let recipe = Recipe(context: context)
-        let recipeID = UUID()
+        let recipeID = stableDemoID(for: slot)
         recipe.id = recipeID
         recipe.title = data.title
         recipe.sortTitle = data.title.sortKey(locale: locale)
@@ -514,6 +525,15 @@ Serve with rice.
             )
             return nil
         }
+    }
+
+    static func deduplicationKey(for recipe: Recipe) -> String {
+        if let demoKey = demoDeduplicationKey(for: recipe.title) {
+            return demoKey
+        }
+
+        return recipe.id?.uuidString ??
+            recipe.objectID.uriRepresentation().absoluteString
     }
 
     private static func reconcileExistingDemoRecipes(
@@ -586,12 +606,13 @@ Serve with rice.
             )
         }
 
-        if preferred.id == nil {
-            preferred.id = UUID()
+        let stableID = stableDemoID(for: slot)
+        if preferred.id != stableID {
+            preferred.id = stableID
             try? context.save()
         }
 
-        return preferred.id
+        return stableID
     }
 
     private static func preferredDemoRecipe(
@@ -642,6 +663,29 @@ Serve with rice.
         case .grouped:
             return demos.grouped
         }
+    }
+
+    private static func stableDemoID(for slot: DemoSlot) -> UUID {
+        switch slot {
+        case .primary:
+            return primaryDemoStableID
+        case .grouped:
+            return groupedDemoStableID
+        }
+    }
+
+    private static func demoDeduplicationKey(for title: String?) -> String? {
+        guard let title else { return nil }
+
+        if demoTitles(for: .primary).contains(title) {
+            return primaryDemoStableID.uuidString
+        }
+
+        if demoTitles(for: .grouped).contains(title) {
+            return groupedDemoStableID.uuidString
+        }
+
+        return nil
     }
 
     private static func persistDemoState(
@@ -787,7 +831,15 @@ Serve with rice.
         imageName: String,
         context: NSManagedObjectContext
     ) {
-        guard recipe.imageFilename?.isEmpty ?? true else { return }
+        let currentFilename = recipe.imageFilename?.trimmingCharacters(
+            in: .whitespacesAndNewlines
+        )
+        if let currentFilename,
+           !currentFilename.isEmpty,
+           FileHelper.loadImage(filename: currentFilename) != nil {
+            return
+        }
+
         guard let filename = saveDemoImageIfAvailable(named: imageName) else { return }
         recipe.imageFilename = filename
         try? context.save()
@@ -854,7 +906,12 @@ Serve with rice.
         guard let data = resized.jpegData(compressionQuality: 0.85) else { return nil }
 
         let filename = "demo-\(UUID().uuidString).jpg"
-        FileHelper.saveImageData(filename: filename, data: data)
+        guard FileHelper.saveImageData(filename: filename, data: data) else {
+            AppLog.storage.error(
+                "Kunde inte spara demo-bild: \(filename, privacy: .public)"
+            )
+            return nil
+        }
         return filename
     }
 }

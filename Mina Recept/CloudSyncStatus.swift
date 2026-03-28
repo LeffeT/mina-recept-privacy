@@ -47,6 +47,11 @@ final class CloudSyncStatus: ObservableObject {
     private var recipeStartupHasRecipes = false
     private var hasRequestedRecipeStartupDemoSeed = false
     private var recipeStartupLoadingTimeoutTask: Task<Void, Never>?
+    private let recipeStartupBeganAt = Date()
+    private var lastRecipeStartupSyncActivityAt = Date()
+    private let recipeStartupDemoSeedMinimumDelay: TimeInterval = 6.0
+    private let recipeStartupDemoSeedMaximumDelay: TimeInterval = 18.0
+    private let recipeStartupDemoSeedSettleWindow: TimeInterval = 2.5
 
     init(container: NSPersistentCloudKitContainer) {
         self.container = container
@@ -61,6 +66,7 @@ final class CloudSyncStatus: ObservableObject {
     }
 
     func refresh() {
+        noteRecipeStartupSyncActivity()
         updateAvailability()
         refreshAccountStatus()
     }
@@ -71,6 +77,29 @@ final class CloudSyncStatus: ObservableObject {
 
     var shouldSeedRecipesOnStartup: Bool {
         !hasRequestedRecipeStartupDemoSeed && !recipeStartupHasRecipes
+    }
+
+    var canAttemptRecipeStartupDemoSeed: Bool {
+        guard shouldSeedRecipesOnStartup else { return false }
+
+        let elapsed = Date().timeIntervalSince(recipeStartupBeganAt)
+        if !FileHelper.isICloudAvailable() || state == .unavailable {
+            return elapsed >= 1.6
+        }
+
+        guard elapsed >= recipeStartupDemoSeedMinimumDelay else {
+            return false
+        }
+
+        let hasSettled =
+            Date().timeIntervalSince(lastRecipeStartupSyncActivityAt) >=
+            recipeStartupDemoSeedSettleWindow
+
+        if !isCheckingAvailability && state != .syncing && hasSettled {
+            return true
+        }
+
+        return elapsed >= recipeStartupDemoSeedMaximumDelay
     }
 
     func setRecipeStartupHasRecipes(_ hasRecipes: Bool) {
@@ -95,6 +124,11 @@ final class CloudSyncStatus: ObservableObject {
         hasRequestedRecipeStartupDemoSeed = true
     }
 
+    private func noteRecipeStartupSyncActivity() {
+        guard !hasCompletedRecipeStartupLoad else { return }
+        lastRecipeStartupSyncActivityAt = Date()
+    }
+
     private func updateAvailability() {
         let available = FileHelper.isICloudAvailable()
         if !available {
@@ -112,6 +146,7 @@ final class CloudSyncStatus: ObservableObject {
 
         let refreshID = UUID()
         availabilityRefreshID = refreshID
+        noteRecipeStartupSyncActivity()
         isCheckingAvailability = true
 
         CKContainer.default().accountStatus { status, error in
@@ -148,6 +183,7 @@ final class CloudSyncStatus: ObservableObject {
                 }
 
                 self.isCheckingAvailability = false
+                self.noteRecipeStartupSyncActivity()
 
                 if let ckError = error as? CKError {
                     if self.isAccessDeniedError(ckError) {
@@ -243,6 +279,7 @@ final class CloudSyncStatus: ObservableObject {
                 self.syncingEndHoldTask?.cancel()
 
                 if event.endDate == nil {
+                    self.noteRecipeStartupSyncActivity()
                     self.activeEventIDs.insert(event.identifier)
                     if self.state != .unavailable && self.state != .syncing {
                         self.syncStartDate = Date()
@@ -252,6 +289,7 @@ final class CloudSyncStatus: ObservableObject {
                 }
 
                 self.activeEventIDs.remove(event.identifier)
+                self.noteRecipeStartupSyncActivity()
 
                 if let error = event.error {
                     if self.isTransientSyncError(error) {
@@ -345,6 +383,7 @@ final class CloudSyncStatus: ObservableObject {
         syncingEndHoldTask?.cancel()
 
         guard state != .unavailable else { return }
+        noteRecipeStartupSyncActivity()
 
         if state != .syncing {
             syncStartDate = Date()
@@ -352,4 +391,3 @@ final class CloudSyncStatus: ObservableObject {
         }
     }
 }
-

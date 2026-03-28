@@ -36,6 +36,7 @@ struct HomeView: View {
     @State private var showingAdd = false
     @State private var showingPaywall = false
     @State private var didScheduleBackgroundTasks = false
+    @State private var pendingDemoSeedTask: Task<Void, Never>?
 
     private var isLocked: Bool {
         !purchaseManager.hasUnlimited &&
@@ -46,59 +47,12 @@ struct HomeView: View {
         themeManager.currentTheme.primaryTextColor == .black ? .light : .dark
     }
 
-    private var shouldShowRecipeStatusBar: Bool {
-        cloudSyncStatus.isRecipeStartupLoading || cloudSyncStatus.isBackgroundSyncActive
-    }
-
-    private var recipeStatusText: String {
-        if cloudSyncStatus.isRecipeStartupLoading {
-            return L("loading_recipes_title", languageManager)
-        }
-        if cloudSyncStatus.isCheckingAvailability {
-            return L("icloud_status_starting", languageManager)
-        }
-
-        switch cloudSyncStatus.state {
-        case .syncing:
-            return L("icloud_status_syncing", languageManager)
-        case .error:
-            return L("icloud_status_error", languageManager)
-        case .unavailable:
-            return L("icloud_status_off", languageManager)
-        case .idle:
-            return L("icloud_status_active", languageManager)
-        }
-    }
-
-    private var recipeStatusColor: Color {
-        if shouldShowRecipeStatusBar {
-            return themeManager.currentTheme.accentColor
-        }
-
-        switch cloudSyncStatus.state {
-        case .error:
-            return .orange
-        case .unavailable:
-            return .red
-        case .idle:
-            return .green
-        case .syncing:
-            return themeManager.currentTheme.accentColor
-        }
-    }
-
     private var emptyStateTitle: String {
-        if cloudSyncStatus.isRecipeStartupLoading {
-            return L("loading_recipes_title", languageManager)
-        }
-        return L("recipes_empty_title", languageManager)
+        L("recipes_empty_title", languageManager)
     }
 
     private var emptyStateMessage: String {
-        if cloudSyncStatus.isRecipeStartupLoading {
-            return L("loading_recipes_message", languageManager)
-        }
-        return L("recipes_empty_message", languageManager)
+        L("recipes_empty_message", languageManager)
     }
     
     
@@ -147,13 +101,6 @@ struct HomeView: View {
                 }
                 .listStyle(.plain)
                 .scrollContentBackground(.hidden)
-            }
-        }
-        .safeAreaInset(edge: .top) {
-            if !recipes.isEmpty && shouldShowRecipeStatusBar {
-                recipeStatusBar
-                    .padding(.horizontal, 16)
-                    .padding(.top, 8)
             }
         }
         .navigationTitle(
@@ -214,6 +161,9 @@ struct HomeView: View {
             cloudSyncStatus.setRecipeStartupHasRecipes(newCount > 0)
             scheduleDemoSeedIfNeeded()
         }
+        .onDisappear {
+            cancelDemoSeedTask()
+        }
     }
 
     // 🔁 Fyll i sortTitle för gamla/inkorrekta recept (körs säkert flera gånger)
@@ -254,25 +204,46 @@ struct HomeView: View {
     }
 
     private func scheduleDemoSeedIfNeeded() {
-        guard cloudSyncStatus.shouldSeedRecipesOnStartup else { return }
-        guard recipes.isEmpty else { return }
+        guard cloudSyncStatus.shouldSeedRecipesOnStartup else {
+            cancelDemoSeedTask()
+            return
+        }
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) {
-            guard cloudSyncStatus.shouldSeedRecipesOnStartup else { return }
-            guard recipes.isEmpty else { return }
-            guard !cloudSyncStatus.isCheckingAvailability else { return }
-            guard cloudSyncStatus.state != .syncing else { return }
+        guard recipes.isEmpty else {
+            cancelDemoSeedTask()
+            return
+        }
 
-            cloudSyncStatus.markRecipeStartupDemoSeedRequested()
-            DemoRecipeSeeder.seedIfNeeded(
-                container: CoreDataStack.shared.container,
-                languageManager: languageManager
-            )
+        guard pendingDemoSeedTask == nil else { return }
 
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
-                cloudSyncStatus.setRecipeStartupHasRecipes(!recipes.isEmpty)
+        pendingDemoSeedTask = Task { @MainActor in
+            defer { pendingDemoSeedTask = nil }
+
+            while !Task.isCancelled {
+                guard cloudSyncStatus.shouldSeedRecipesOnStartup else { return }
+                guard recipes.isEmpty else { return }
+
+                if cloudSyncStatus.canAttemptRecipeStartupDemoSeed {
+                    cloudSyncStatus.markRecipeStartupDemoSeedRequested()
+                    DemoRecipeSeeder.seedIfNeeded(
+                        container: CoreDataStack.shared.container,
+                        languageManager: languageManager
+                    )
+
+                    try? await Task.sleep(nanoseconds: 300_000_000)
+                    guard !Task.isCancelled else { return }
+                    cloudSyncStatus.setRecipeStartupHasRecipes(!recipes.isEmpty)
+                    return
+                }
+
+                try? await Task.sleep(nanoseconds: 1_000_000_000)
             }
         }
+    }
+
+    private func cancelDemoSeedTask() {
+        pendingDemoSeedTask?.cancel()
+        pendingDemoSeedTask = nil
     }
 
     private func flushPendingImagesIfPossible() {
@@ -300,14 +271,10 @@ struct HomeView: View {
 
     private var emptyStateView: some View {
         VStack {
-            if shouldShowRecipeStatusBar {
-                recipeStatusBar
-            }
-
             VStack(spacing: 14) {
-                Image(systemName: shouldShowRecipeStatusBar ? "arrow.triangle.2.circlepath" : "fork.knife")
+                Image(systemName: "fork.knife")
                     .font(.system(size: 30, weight: .semibold))
-                    .foregroundColor(recipeStatusColor)
+                    .foregroundColor(themeManager.currentTheme.accentColor)
 
                 Text(emptyStateTitle)
                     .font(.headline)
@@ -339,34 +306,6 @@ struct HomeView: View {
         .padding(.top, 24)
         .padding(.horizontal, 28)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-    }
-
-    private var recipeStatusBar: some View {
-        HStack(spacing: 10) {
-            ProgressView()
-                .progressViewStyle(.circular)
-                .tint(recipeStatusColor)
-                .scaleEffect(0.85)
-
-            Text(recipeStatusText)
-                .font(.footnote.weight(.semibold))
-                .foregroundColor(themeManager.currentTheme.primaryTextColor)
-
-            Spacer(minLength: 0)
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
-        .background(
-            Capsule()
-                .fill(themeManager.currentTheme.cardBackground.opacity(0.94))
-        )
-        .overlay(
-            Capsule()
-                .stroke(
-                    themeManager.currentTheme.primaryTextColor.opacity(0.08),
-                    lineWidth: 1
-                )
-        )
     }
 }
 
