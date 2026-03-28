@@ -46,8 +46,59 @@ struct HomeView: View {
         themeManager.currentTheme.primaryTextColor == .black ? .light : .dark
     }
 
-    private var shouldShowStartupLoadingOverlay: Bool {
-        recipes.isEmpty && cloudSyncStatus.isRecipeStartupLoading
+    private var shouldShowRecipeStatusBar: Bool {
+        cloudSyncStatus.isRecipeStartupLoading || cloudSyncStatus.isBackgroundSyncActive
+    }
+
+    private var recipeStatusText: String {
+        if cloudSyncStatus.isRecipeStartupLoading {
+            return L("loading_recipes_title", languageManager)
+        }
+        if cloudSyncStatus.isCheckingAvailability {
+            return L("icloud_status_starting", languageManager)
+        }
+
+        switch cloudSyncStatus.state {
+        case .syncing:
+            return L("icloud_status_syncing", languageManager)
+        case .error:
+            return L("icloud_status_error", languageManager)
+        case .unavailable:
+            return L("icloud_status_off", languageManager)
+        case .idle:
+            return L("icloud_status_active", languageManager)
+        }
+    }
+
+    private var recipeStatusColor: Color {
+        if shouldShowRecipeStatusBar {
+            return themeManager.currentTheme.accentColor
+        }
+
+        switch cloudSyncStatus.state {
+        case .error:
+            return .orange
+        case .unavailable:
+            return .red
+        case .idle:
+            return .green
+        case .syncing:
+            return themeManager.currentTheme.accentColor
+        }
+    }
+
+    private var emptyStateTitle: String {
+        if cloudSyncStatus.isRecipeStartupLoading {
+            return L("loading_recipes_title", languageManager)
+        }
+        return L("recipes_empty_title", languageManager)
+    }
+
+    private var emptyStateMessage: String {
+        if cloudSyncStatus.isRecipeStartupLoading {
+            return L("loading_recipes_message", languageManager)
+        }
+        return L("recipes_empty_message", languageManager)
     }
     
     
@@ -80,24 +131,29 @@ struct HomeView: View {
             themeManager.currentTheme.backgroundGradient
                 .ignoresSafeArea()
 
-            List {
-                ForEach(recipes) { recipe in
-                    NavigationLink {
-                        RecipeDetailView(recipe: recipe)
-                    } label: {
-                        RecipeListRow(recipe: recipe)
+            if recipes.isEmpty {
+                emptyStateView
+            } else {
+                List {
+                    ForEach(recipes) { recipe in
+                        NavigationLink {
+                            RecipeDetailView(recipe: recipe)
+                        } label: {
+                            RecipeListRow(recipe: recipe)
+                        }
+                        .listRowBackground(Color.clear)
                     }
-                    .listRowBackground(Color.clear)
+                    .onDelete(perform: delete)
                 }
-                .onDelete(perform: delete)
+                .listStyle(.plain)
+                .scrollContentBackground(.hidden)
             }
-            .listStyle(.plain)
-            .scrollContentBackground(.hidden)
-            .opacity(shouldShowStartupLoadingOverlay ? 0.001 : 1)
-            .allowsHitTesting(!shouldShowStartupLoadingOverlay)
-
-            if shouldShowStartupLoadingOverlay {
-                loadingOverlay
+        }
+        .safeAreaInset(edge: .top) {
+            if !recipes.isEmpty && shouldShowRecipeStatusBar {
+                recipeStatusBar
+                    .padding(.horizontal, 16)
+                    .padding(.top, 8)
             }
         }
         .navigationTitle(
@@ -242,21 +298,22 @@ struct HomeView: View {
         try? context.save()
     }
 
-    private var loadingOverlay: some View {
+    private var emptyStateView: some View {
         VStack {
-            Spacer()
+            if shouldShowRecipeStatusBar {
+                recipeStatusBar
+            }
 
             VStack(spacing: 14) {
-                ProgressView()
-                    .progressViewStyle(.circular)
-                    .tint(themeManager.currentTheme.accentColor)
-                    .scaleEffect(1.15)
+                Image(systemName: shouldShowRecipeStatusBar ? "arrow.triangle.2.circlepath" : "fork.knife")
+                    .font(.system(size: 30, weight: .semibold))
+                    .foregroundColor(recipeStatusColor)
 
-                Text(L("loading_recipes_title", languageManager))
+                Text(emptyStateTitle)
                     .font(.headline)
                     .foregroundColor(themeManager.currentTheme.primaryTextColor)
 
-                Text(L("loading_recipes_message", languageManager))
+                Text(emptyStateMessage)
                     .font(.footnote)
                     .multilineTextAlignment(.center)
                     .foregroundColor(
@@ -276,13 +333,40 @@ struct HomeView: View {
                         lineWidth: 1
                     )
             )
-            .padding(.horizontal, 28)
 
             Spacer()
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .transition(.opacity)
-        .allowsHitTesting(false)
+        .padding(.top, 24)
+        .padding(.horizontal, 28)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+    }
+
+    private var recipeStatusBar: some View {
+        HStack(spacing: 10) {
+            ProgressView()
+                .progressViewStyle(.circular)
+                .tint(recipeStatusColor)
+                .scaleEffect(0.85)
+
+            Text(recipeStatusText)
+                .font(.footnote.weight(.semibold))
+                .foregroundColor(themeManager.currentTheme.primaryTextColor)
+
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .background(
+            Capsule()
+                .fill(themeManager.currentTheme.cardBackground.opacity(0.94))
+        )
+        .overlay(
+            Capsule()
+                .stroke(
+                    themeManager.currentTheme.primaryTextColor.opacity(0.08),
+                    lineWidth: 1
+                )
+        )
     }
 }
 

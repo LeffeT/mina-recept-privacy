@@ -111,6 +111,8 @@
 "icloud_last_sync" = "Senast synkat: %@";
 "loading_recipes_title" = "Laddar recept…";
 "loading_recipes_message" = "Det kan ta en liten stund efter ominstallation eller när iCloud synkar.";
+"recipes_empty_title" = "Inga recept ännu";
+"recipes_empty_message" = "Dina recept visas här när du lägger till dem eller när iCloud har synkat klart.";
 
 "icloud_required_title" = "iCloud krävs";
 "icloud_required_message" = "För att dela recept behöver iCloud Drive vara på.

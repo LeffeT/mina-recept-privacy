@@ -112,6 +112,8 @@
 "icloud_last_sync" = "Last synced: %@";
 "loading_recipes_title" = "Loading recipes…";
 "loading_recipes_message" = "This can take a moment after reinstalling or while iCloud is syncing.";
+"recipes_empty_title" = "No recipes yet";
+"recipes_empty_message" = "Your recipes will appear here when you add them or when iCloud has finished syncing.";
 
 "icloud_required_title" = "iCloud required";
 "icloud_required_message" = "To share recipes, iCloud Drive must be enabled.
