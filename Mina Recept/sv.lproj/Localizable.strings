@@ -67,6 +67,12 @@
 "unlock_title" = "Lås upp obegränsat";
 "unlock_message" = "Du kan skapa %d recept gratis. Köp för obegränsat antal.";
 "unlock_cta" = "Lås upp";
+"test_unlock_section_title" = "Testupplåsning";
+"test_unlock_section_subtitle" = "Gratis premium kan bara aktiveras i DEBUG och TestFlight.";
+"test_unlock_toggle" = "Aktivera gratis premium för test";
+"test_unlock_active_message" = "Testupplåsning är aktiv.";
+"test_unlock_environment_debug" = "Miljö: DEBUG via Xcode";
+"test_unlock_environment_testflight" = "Miljö: TestFlight";
 "restore_purchases" = "Återställ köp";
 "purchase_failed" = "Köpet misslyckades. Försök igen.";
 "price_unavailable" = "Priset är inte klart ännu. Försök igen om en stund.";

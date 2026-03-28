@@ -67,6 +67,12 @@
 "unlock_title" = "Unlock unlimited recipes";
 "unlock_message" = "You can create %d recipes for free. Buy to create unlimited.";
 "unlock_cta" = "Unlock";
+"test_unlock_section_title" = "Test unlock";
+"test_unlock_section_subtitle" = "Free premium can only be enabled in DEBUG and TestFlight.";
+"test_unlock_toggle" = "Enable free premium for testing";
+"test_unlock_active_message" = "Test unlock is active.";
+"test_unlock_environment_debug" = "Environment: DEBUG via Xcode";
+"test_unlock_environment_testflight" = "Environment: TestFlight";
 "restore_purchases" = "Restore purchases";
 "purchase_failed" = "Purchase failed. Try again.";
 "price_unavailable" = "Price not available yet. Try again in a moment.";

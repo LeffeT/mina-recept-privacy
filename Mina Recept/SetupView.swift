@@ -15,6 +15,7 @@ struct SetupView: View {
     @EnvironmentObject var languageManager: LanguageManager
     @EnvironmentObject var cloudSyncStatus: CloudSyncStatus
     @EnvironmentObject var cookingModeManager: CookingModeManager
+    @EnvironmentObject var purchaseManager: PurchaseManager
     @Environment(\.managedObjectContext) private var context
     @Environment(\.dismiss) private var dismiss
 
@@ -84,11 +85,7 @@ struct SetupView: View {
     }
 
     private var canShowDemoRecipeTools: Bool {
-        #if DEBUG
-        return true
-        #else
-        return Bundle.main.appStoreReceiptURL?.lastPathComponent == "sandboxReceipt"
-        #endif
+        purchaseManager.canUseTestUnlock
     }
 
     private var resolvedDemoLanguage: AppLanguage {
@@ -98,6 +95,17 @@ struct SetupView: View {
             return code == "sv" ? .swedish : .english
         case .swedish, .english:
             return languageManager.selectedLanguage
+        }
+    }
+
+    private var purchaseEnvironmentText: String {
+        switch purchaseManager.runtimeEnvironment {
+        case .debug:
+            return L("test_unlock_environment_debug", languageManager)
+        case .testFlight:
+            return L("test_unlock_environment_testflight", languageManager)
+        case .appStore:
+            return ""
         }
     }
 
@@ -212,6 +220,44 @@ struct SetupView: View {
                         )
                         .font(.footnote)
                         .foregroundColor(themeManager.currentTheme.primaryTextColor)
+                    }
+
+                    if purchaseManager.canUseTestUnlock {
+                        SettingsSection(
+                            title: L("test_unlock_section_title", languageManager),
+                            subtitle: L("test_unlock_section_subtitle", languageManager),
+                            theme: themeManager.currentTheme
+                        ) {
+                            VStack(alignment: .leading, spacing: 10) {
+                                Toggle(
+                                    isOn: Binding(
+                                        get: { purchaseManager.isUsingTestUnlock },
+                                        set: { purchaseManager.setTestUnlockEnabled($0) }
+                                    )
+                                ) {
+                                    Text(L("test_unlock_toggle", languageManager))
+                                }
+                                .toggleStyle(
+                                    SwitchToggleStyle(
+                                        tint: themeManager.currentTheme.accentColor
+                                    )
+                                )
+                                .font(.footnote)
+                                .foregroundColor(themeManager.currentTheme.primaryTextColor)
+
+                                Text(purchaseEnvironmentText)
+                                    .font(.caption)
+                                    .foregroundColor(
+                                        themeManager.currentTheme.primaryTextColor.opacity(0.7)
+                                    )
+
+                                if purchaseManager.isUsingTestUnlock {
+                                    Text(L("test_unlock_active_message", languageManager))
+                                        .font(.caption)
+                                        .foregroundColor(themeManager.currentTheme.accentColor)
+                                }
+                            }
+                        }
                     }
 
                     SettingsSection(
