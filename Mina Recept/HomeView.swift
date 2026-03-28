@@ -36,13 +36,6 @@ struct HomeView: View {
     @State private var showingAdd = false
     @State private var showingPaywall = false
     @State private var didScheduleBackgroundTasks = false
-    @State private var didScheduleStartupLoadingTimeout = false
-    @State private var startupLoadingTimedOut = false
-    @State private var isStartupLoading = false
-    @State private var hasCompletedInitialLoad = false
-    @State private var hasRequestedStartupDemoSeed = false
-    @State private var loadingSettleID = UUID()
-    @State private var demoSeedScheduleID = UUID()
 
     private var isLocked: Bool {
         !purchaseManager.hasUnlimited &&
@@ -54,7 +47,7 @@ struct HomeView: View {
     }
 
     private var shouldShowStartupLoadingOverlay: Bool {
-        isStartupLoading && !startupLoadingTimedOut && !hasCompletedInitialLoad
+        recipes.isEmpty && cloudSyncStatus.isRecipeStartupLoading
     }
     
     
@@ -110,8 +103,7 @@ struct HomeView: View {
         .navigationTitle(
             L("recipes", languageManager)
         )
-        .toolbarBackground(themeManager.currentTheme.backgroundGradient, for: .navigationBar)
-        .toolbarBackground(.visible, for: .navigationBar)
+        .toolbarBackground(.hidden, for: .navigationBar)
         .toolbarColorScheme(navigationBarColorScheme, for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
@@ -145,8 +137,7 @@ struct HomeView: View {
           #endif
             backfillSortTitlesIfNeeded()
             scheduleBackgroundTasksIfNeeded()
-            scheduleStartupLoadingTimeoutIfNeeded()
-            beginStartupLoadingIfNeeded()
+            cloudSyncStatus.setRecipeStartupHasRecipes(!recipes.isEmpty)
             scheduleDemoSeedIfNeeded()
         }
         .onChange(of: cloudSyncStatus.state) { _, newValue in
@@ -155,52 +146,43 @@ struct HomeView: View {
                 backfillSortTitlesIfNeeded()
                 flushPendingImagesIfPossible()
             }
-
-            if newValue == .unavailable {
-                startupLoadingTimedOut = true
-                isStartupLoading = false
-                hasCompletedInitialLoad = true
-            }
-
-            beginStartupLoadingIfNeeded()
             scheduleDemoSeedIfNeeded()
         }
         .onChange(of: cloudSyncStatus.isCheckingAvailability) { _, _ in
-            beginStartupLoadingIfNeeded()
             scheduleDemoSeedIfNeeded()
         }
         .onChange(of: languageManager.selectedLanguage) { _, _ in
             // Språkbyte ska inte skriva om recept eller trigga iCloud-sync.
         }
         .onChange(of: recipes.count) { _, newCount in
-            if newCount > 0 {
-                hasRequestedStartupDemoSeed = true
-            }
-            if newCount > 0 || shouldShowStartupLoadingOverlay {
-                beginStartupLoadingIfNeeded()
-            }
+            cloudSyncStatus.setRecipeStartupHasRecipes(newCount > 0)
             scheduleDemoSeedIfNeeded()
         }
     }
 
     // 🔁 Fyll i sortTitle för gamla/inkorrekta recept (körs säkert flera gånger)
     private func backfillSortTitlesIfNeeded() {
-        let request: NSFetchRequest<Recipe> = Recipe.fetchRequest()
-        let recipes = (try? context.fetch(request)) ?? []
+        let locale = languageManager.locale
+        let backgroundContext = CoreDataStack.shared.container.newBackgroundContext()
 
-        var didChange = false
+        backgroundContext.perform {
+            let request: NSFetchRequest<Recipe> = Recipe.fetchRequest()
+            let recipes = (try? backgroundContext.fetch(request)) ?? []
 
-        for recipe in recipes {
-            let title = recipe.title ?? ""
-            let expectedSortTitle = title.sortKey(locale: languageManager.locale)
-            if recipe.sortTitle != expectedSortTitle {
-                recipe.sortTitle = expectedSortTitle
-                didChange = true
+            var didChange = false
+
+            for recipe in recipes {
+                let title = recipe.title ?? ""
+                let expectedSortTitle = title.sortKey(locale: locale)
+                if recipe.sortTitle != expectedSortTitle {
+                    recipe.sortTitle = expectedSortTitle
+                    didChange = true
+                }
             }
-        }
 
-        if didChange {
-            try? context.save()
+            if didChange {
+                try? backgroundContext.save()
+            }
         }
     }
 
@@ -215,92 +197,24 @@ struct HomeView: View {
         }
     }
 
-    private func scheduleStartupLoadingTimeoutIfNeeded() {
-        guard !didScheduleStartupLoadingTimeout else { return }
-        didScheduleStartupLoadingTimeout = true
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 25.0) {
-            startupLoadingTimedOut = true
-            isStartupLoading = false
-            hasCompletedInitialLoad = true
-        }
-    }
-
-    private func beginStartupLoadingIfNeeded() {
-        guard !hasCompletedInitialLoad else {
-            isStartupLoading = false
-            return
-        }
-
-        guard !startupLoadingTimedOut else {
-            isStartupLoading = false
-            return
-        }
-
-        guard FileHelper.isICloudAvailable() else {
-            isStartupLoading = false
-            return
-        }
-
-        let shouldBeginLoading =
-            isStartupLoading ||
-            (recipes.isEmpty && (
-                cloudSyncStatus.isCheckingAvailability ||
-                cloudSyncStatus.state == .syncing ||
-                cloudSyncStatus.lastSyncDate == nil
-            ))
-
-        guard shouldBeginLoading else {
-            hasCompletedInitialLoad = true
-            isStartupLoading = false
-            return
-        }
-
-        isStartupLoading = true
-
-        let settleID = UUID()
-        loadingSettleID = settleID
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) {
-            guard loadingSettleID == settleID else { return }
-
-            if startupLoadingTimedOut || cloudSyncStatus.state == .unavailable {
-                isStartupLoading = false
-                hasCompletedInitialLoad = true
-                return
-            }
-
-            if cloudSyncStatus.isCheckingAvailability || cloudSyncStatus.state == .syncing {
-                beginStartupLoadingIfNeeded()
-                return
-            }
-
-            hasCompletedInitialLoad = true
-            isStartupLoading = false
-        }
-    }
-
     private func scheduleDemoSeedIfNeeded() {
-        guard !hasRequestedStartupDemoSeed else { return }
+        guard cloudSyncStatus.shouldSeedRecipesOnStartup else { return }
         guard recipes.isEmpty else { return }
-        let scheduleID = UUID()
-        demoSeedScheduleID = scheduleID
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) {
-            guard demoSeedScheduleID == scheduleID else { return }
-            guard !hasRequestedStartupDemoSeed else { return }
+            guard cloudSyncStatus.shouldSeedRecipesOnStartup else { return }
             guard recipes.isEmpty else { return }
             guard !cloudSyncStatus.isCheckingAvailability else { return }
             guard cloudSyncStatus.state != .syncing else { return }
 
-            hasRequestedStartupDemoSeed = true
+            cloudSyncStatus.markRecipeStartupDemoSeedRequested()
             DemoRecipeSeeder.seedIfNeeded(
                 container: CoreDataStack.shared.container,
                 languageManager: languageManager
             )
 
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
-                beginStartupLoadingIfNeeded()
+                cloudSyncStatus.setRecipeStartupHasRecipes(!recipes.isEmpty)
             }
         }
     }
@@ -368,6 +282,7 @@ struct HomeView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .transition(.opacity)
+        .allowsHitTesting(false)
     }
 }
 

@@ -5,6 +5,15 @@
 //  Created by Leif Tarvainen on 2026-02-13.
 //
 
+
+
+//
+//  CloudSyncStatus.swift
+//  Mina Recept
+//
+//  Created by Leif Tarvainen on 2026-02-13.
+//
+
 import Combine
 import CloudKit
 import CoreData
@@ -23,6 +32,7 @@ final class CloudSyncStatus: ObservableObject {
     @Published private(set) var lastError: String?
     @Published private(set) var lastSyncDate: Date?
     @Published private(set) var isCheckingAvailability = false
+    @Published private(set) var isRecipeStartupLoading = false
 
     private let container: NSPersistentCloudKitContainer
     private var cancellables = Set<AnyCancellable>()
@@ -31,6 +41,12 @@ final class CloudSyncStatus: ObservableObject {
     private var syncingEndHoldTask: Task<Void, Never>?
     private let minimumSyncDuration: TimeInterval = 10.0
     private var availabilityRefreshID = UUID()
+
+    private var hasCompletedRecipeStartupLoad = false
+    private var recipeStartupLoadingTimedOut = false
+    private var recipeStartupHasRecipes = false
+    private var hasRequestedRecipeStartupDemoSeed = false
+    private var recipeStartupLoadingTimeoutTask: Task<Void, Never>?
 
     init(container: NSPersistentCloudKitContainer) {
         self.container = container
@@ -47,6 +63,36 @@ final class CloudSyncStatus: ObservableObject {
     func refresh() {
         updateAvailability()
         refreshAccountStatus()
+    }
+
+    var isBackgroundSyncActive: Bool {
+        isCheckingAvailability || state == .syncing
+    }
+
+    var shouldSeedRecipesOnStartup: Bool {
+        !hasRequestedRecipeStartupDemoSeed && !recipeStartupHasRecipes
+    }
+
+    func setRecipeStartupHasRecipes(_ hasRecipes: Bool) {
+        recipeStartupHasRecipes = hasRecipes
+        if hasRecipes {
+            hasRequestedRecipeStartupDemoSeed = true
+            finishRecipeStartupLoading(markCompleted: true)
+            return
+        }
+
+        guard !hasCompletedRecipeStartupLoad else {
+            isRecipeStartupLoading = false
+            cancelRecipeStartupLoadingTasks()
+            return
+        }
+
+        isRecipeStartupLoading = true
+        scheduleRecipeStartupLoadingTimeoutIfNeeded()
+    }
+
+    func markRecipeStartupDemoSeedRequested() {
+        hasRequestedRecipeStartupDemoSeed = true
     }
 
     private func updateAvailability() {
@@ -79,6 +125,7 @@ final class CloudSyncStatus: ObservableObject {
                 if let error {
                     self.lastError = error.localizedDescription
                 }
+
                 switch status {
                 case .available:
                     self.verifyContainerAccess(refreshID: refreshID)
@@ -153,10 +200,37 @@ final class CloudSyncStatus: ObservableObject {
         isCheckingAvailability = false
     }
 
+    private func scheduleRecipeStartupLoadingTimeoutIfNeeded() {
+        guard recipeStartupLoadingTimeoutTask == nil else { return }
+
+        recipeStartupLoadingTimeoutTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: 25_000_000_000)
+            guard let self, !Task.isCancelled else { return }
+
+            self.recipeStartupLoadingTimedOut = true
+            self.finishRecipeStartupLoading(markCompleted: true)
+        }
+    }
+
+    private func finishRecipeStartupLoading(markCompleted: Bool) {
+        if markCompleted {
+            hasCompletedRecipeStartupLoad = true
+        }
+        isRecipeStartupLoading = false
+        cancelRecipeStartupLoadingTasks()
+    }
+
+    private func cancelRecipeStartupLoadingTasks() {
+        recipeStartupLoadingTimeoutTask?.cancel()
+        recipeStartupLoadingTimeoutTask = nil
+    }
+
     private func observeEvents() {
         NotificationCenter.default
-            .publisher(for: NSPersistentCloudKitContainer.eventChangedNotification,
-                       object: container)
+            .publisher(
+                for: NSPersistentCloudKitContainer.eventChangedNotification,
+                object: container
+            )
             .receive(on: RunLoop.main)
             .sink { [weak self] notification in
                 guard let self else { return }
@@ -212,6 +286,7 @@ final class CloudSyncStatus: ObservableObject {
                               self.state != .unavailable,
                               self.state != .error
                         else { return }
+
                         self.state = .idle
                         self.syncStartDate = nil
                     }
@@ -225,6 +300,7 @@ final class CloudSyncStatus: ObservableObject {
 
     private func isTransientSyncError(_ error: Error) -> Bool {
         guard let ckError = error as? CKError else { return false }
+
         switch ckError.code {
         case .changeTokenExpired,
              .zoneBusy,
@@ -254,7 +330,8 @@ final class CloudSyncStatus: ObservableObject {
                 let updates = notification.userInfo?[NSUpdatedObjectsKey] as? Set<NSManagedObject>
                 let deletes = notification.userInfo?[NSDeletedObjectsKey] as? Set<NSManagedObject>
 
-                let hasChanges = (inserts?.isEmpty == false) ||
+                let hasChanges =
+                    (inserts?.isEmpty == false) ||
                     (updates?.isEmpty == false) ||
                     (deletes?.isEmpty == false)
 
@@ -267,35 +344,12 @@ final class CloudSyncStatus: ObservableObject {
     private func markLocalChange() {
         syncingEndHoldTask?.cancel()
 
+        guard state != .unavailable else { return }
+
         if state != .syncing {
             syncStartDate = Date()
             state = .syncing
         }
-
-        lastSyncDate = Date()
-
-        let startDate = syncStartDate ?? Date()
-        let elapsed = Date().timeIntervalSince(startDate)
-        let remaining = max(0, minimumSyncDuration - elapsed)
-
-        guard remaining > 0 else {
-            if activeEventIDs.isEmpty {
-                state = .idle
-                syncStartDate = nil
-            }
-            return
-        }
-
-        syncingEndHoldTask = Task { @MainActor in
-            try? await Task.sleep(
-                nanoseconds: UInt64(remaining * 1_000_000_000)
-            )
-            guard activeEventIDs.isEmpty,
-                  state != .unavailable,
-                  state != .error
-            else { return }
-            state = .idle
-            syncStartDate = nil
-        }
     }
 }
+

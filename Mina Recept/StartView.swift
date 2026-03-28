@@ -33,6 +33,10 @@ struct StartView: View {
     }
 
     private var iCloudStatusText: String {
+        if cloudSyncStatus.isCheckingAvailability {
+            return L("icloud_status_starting", languageManager)
+        }
+
         switch cloudSyncStatus.state {
         case .syncing:
             return L("icloud_status_syncing", languageManager)
@@ -49,6 +53,10 @@ struct StartView: View {
     }
 
     private var iCloudStatusColor: Color {
+        if cloudSyncStatus.isCheckingAvailability {
+            return themeManager.currentTheme.accentColor
+        }
+
         switch cloudSyncStatus.state {
         case .syncing:
             return themeManager.currentTheme.accentColor
@@ -61,6 +69,13 @@ struct StartView: View {
                 ? themeManager.currentTheme.accentColor
                 : .green
         }
+    }
+
+    private var shouldShowICloudStatus: Bool {
+        cloudSyncStatus.isBackgroundSyncActive ||
+        cloudSyncStatus.state == .unavailable ||
+        cloudSyncStatus.state == .error ||
+        cloudSyncStatus.lastSyncDate == nil
     }
 
     private func scheduleICloudRefreshIfNeeded() {
@@ -311,13 +326,20 @@ struct StartView: View {
                     .buttonStyle(.plain)
 
                     // =========================
-                    // ICLOUD WARNING (ONLY WHEN NEEDED)
+                    // ICLOUD STATUS (NON-BLOCKING)
                     // =========================
-                    if cloudSyncStatus.state == .unavailable || cloudSyncStatus.state == .error {
+                    if shouldShowICloudStatus {
                         HStack(spacing: 8) {
-                            Circle()
-                                .fill(iCloudStatusColor)
-                                .frame(width: 8, height: 8)
+                            if cloudSyncStatus.isBackgroundSyncActive {
+                                ProgressView()
+                                    .progressViewStyle(.circular)
+                                    .tint(iCloudStatusColor)
+                                    .scaleEffect(0.8)
+                            } else {
+                                Circle()
+                                    .fill(iCloudStatusColor)
+                                    .frame(width: 8, height: 8)
+                            }
                             Text(iCloudStatusText)
                                 .font(.footnote)
                                 .foregroundColor(
